@@ -8,9 +8,11 @@ This guide describes a clean, scalable directory structure for Go applications�
 
 ```
 /project-root
-│── cmd/                 # Entry points for top‑level binaries (e.g., api, worker)
-│    └── api/
-│         └── main.go
+│── api/                # OpenAPI specs (source of truth)
+│   └── helloworld/
+│       ├── oapi-codegen.client.yaml
+│       ├── oapi-codegen.server.yaml
+│       └── openapi.yaml # API definition
 │
 │── config/              # Configuration files and environment settings
 │    └── config.yaml
@@ -20,15 +22,21 @@ This guide describes a clean, scalable directory structure for Go applications�
 │         ├── cmd/
 │         │     └── main.go
 │         ├── internal/
-│         │     ├── api/        # OpenAPI-generated server interfaces
-│         │     ├── client/     # OpenAPI-generated client code
-│         │     ├── controller/ # Business logic / domain controllers
-│         │     ├── handler/    # API handlers (HTTP, gRPC)
-│         │     ├── security/   # Auth, RBAC, middleware
-│         │     └── repository/ # Database & Redis implementations
-│         ├── oapi-codegen.client.yaml
-│         ├── oapi-codegen.server.yaml
-│         └── openapi.yaml      # API definition
+│         │     ├── api/             # OpenAPI-generated server interfaces
+│         │     │   ├── gen/         # oapi-codegen output (ignored by git)
+│         │     │   │   └── api_gen.go
+│         │     │   └── router.go    # glue between generated interfaces and handlers
+│         │     ├── config/
+│         │     │   ├── config.go    # your Config struct
+│         │     │   └── loader.go    # your Load / MustLoad
+│         │     ├── controller/      # Business logic / domain controllers
+│         │     ├── handler/         # API handlers (HTTP, gRPC)
+│         │     ├── security/        # Auth, RBAC, middleware
+│         │     └── repository/      # Database & Redis implementations
+│         └── config/                # YAML files, mounted in Docker, etc.
+│             ├── config.yaml
+│             ├── config.dev.yaml
+│             └── config.prod.yaml
 │
 │── pkg/                 # Shared utilities (logger, middleware, helpers)
 │

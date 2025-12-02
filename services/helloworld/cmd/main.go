@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/incheat/go-playground/config"
 	"os"
+	"github.com/incheat/go-playground/services/helloworld/internal/config"
 )
 
 func main() {
