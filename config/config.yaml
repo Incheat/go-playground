@@ -1,0 +1,18 @@
+server:
+  port: 8080
+
+database:
+  host: localhost
+  port: 3306
+  user: root
+  password: rootpassword
+  name: app_db
+
+redis:
+  addr: localhost:6379
+  password: ""
+  db: 0
+
+jwt:
+  secret: your_jwt_secret_key
+  expire: 3600
