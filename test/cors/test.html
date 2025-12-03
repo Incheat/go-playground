@@ -3,9 +3,9 @@
 
 <body>
     <script>
-        fetch("http://localhost:8080/v1/ping", {
+        fetch("http://localhost:8080/v2/ping", {
                 method: "GET",
-                credentials: "include"
+                // credentials: "include"
             })
             .then(res => console.log("OK", res))
             .catch(err => console.error("CORS BLOCKED", err));
