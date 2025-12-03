@@ -6,10 +6,6 @@ info:
     Demo: API versioning using /v1 and /v2.
     Each response returns a `versionId` header indicating which schema version was used.
 
-servers:
-  - url: http://localhost:8080
-    description: Development Server
-
 paths:
   /v1/ping:
     get:
