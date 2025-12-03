@@ -38,7 +38,7 @@ This guide describes a clean, scalable directory structure for Go applications�
 │             ├── config.dev.yaml
 │             └── config.prod.yaml
 │
-│── pkg/                 # Shared utilities (logger, middleware, helpers)
+│── internal/                 # Shared utilities (logger, middleware, helpers)
 │
 │── migrations/          # Database migrations (goose, migrate, etc.)
 │
