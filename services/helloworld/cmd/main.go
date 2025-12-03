@@ -8,20 +8,37 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/incheat/go-playground/internal/middleware"
+	"github.com/incheat/go-playground/internal/oapi"
 	servergen "github.com/incheat/go-playground/services/helloworld/internal/api/gen/server"
 	"github.com/incheat/go-playground/services/helloworld/internal/config"
 	"github.com/incheat/go-playground/services/helloworld/internal/handler"
+	ginmiddleware "github.com/oapi-codegen/gin-middleware"
 )
 
 func main() {
 	cfg := config.MustLoad()
+	env := os.Getenv("APP_ENV")
 
-	fmt.Printf("ENV: %s\n", os.Getenv("APP_ENV"))
+	fmt.Printf("ENV: %s\n", env)
 	fmt.Printf("Server port: %d\n", cfg.Server.Port)
 	fmt.Printf("DB host: %s\n", cfg.Database.Host)
 
+	// Get OpenAPI definition from embedded spec
+	swagger, err := servergen.GetSwagger()
+	if err != nil {
+		log.Fatalf("Error loading swagger spec: %v", err)
+	}
+
 	r := gin.Default()
+	// Apply CORS rules based on the request path.
 	r.Use(middleware.PathBasedCORS(convertCORSRules(cfg)))
+	// Validate requests against the OpenAPI schema.
+	r.Use(ginmiddleware.OapiRequestValidatorWithOptions(
+		swagger,
+		oapi.NewValidatorOptions(oapi.ValidatorConfig{
+			ProdMode: env == "prod",
+		}),
+	))
 
 	srv := handler.NewServer()
 	handler := servergen.NewStrictHandler(srv, nil)
