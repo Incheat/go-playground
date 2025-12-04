@@ -1,0 +1,30 @@
+server:
+  port: 8081
+
+cors:
+  rules:
+    - path: "/v1/*"
+      allowed_origins:
+        - "*"
+    - path: "/v2/*"
+      allowed_origins:
+        - "https://app.example.com"
+        - "https://cdn.example.com"
+    - path: "/api/v1/admin/*"
+      allowed_origins:
+        - "https://admin.example.com"
+
+mysql:
+  dsn: "auth:authpass@tcp(mysql:3306)/auth?parseTime=true"
+
+redis:
+  addr: "redis:6379"
+  password: ""
+  db: 0
+
+jwt:
+  secret: "super-secret-key-change-me"
+  expire: 60
+
+app:
+  env: "dev"

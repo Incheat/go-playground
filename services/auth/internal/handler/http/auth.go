@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	gen "github.com/incheat/go-playground/services/auth/internal/api/gen/server"
+	"github.com/incheat/go-playground/services/auth/internal/controller/auth"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
@@ -13,11 +14,13 @@ import (
 var _ gen.StrictServerInterface = (*Handler)(nil)
 
 // Handler is the handler for the Auth API.
-type Handler struct {}
+type Handler struct {
+	ctrl *auth.Controller
+}
 
 // NewServer creates a new Server.
-func NewHandler() *Handler {
-	return &Handler{}
+func NewHandler(ctrl *auth.Controller) *Handler {
+	return &Handler{ctrl: ctrl}
 }
 
 // GetMe is the handler for the GetMe endpoint.
