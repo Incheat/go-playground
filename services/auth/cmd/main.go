@@ -49,7 +49,8 @@ func main() {
 		}),
 	))
 
-	srv := httphandler.NewHandler(auth.NewController(nil, nil, nil))
+	ctrl := auth.NewController(nil, nil, nil)
+	srv := httphandler.NewHandler(ctrl)
 	handler := servergen.NewStrictHandler(srv, nil)
 	servergen.RegisterHandlers(r, handler)
 
