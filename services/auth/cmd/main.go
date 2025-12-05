@@ -18,12 +18,13 @@ import (
 )
 
 func main() {
+
 	cfg := config.MustLoad()
+	logger := initLogger(cfg.Env)
 
-	fmt.Printf("ENV: %s\n", cfg.Env)
-	fmt.Printf("Server port: %d\n", cfg.Server.Port)
 
-	logger, _ := zap.NewDevelopment()
+	logger.Info("Starting auth service", zap.String("env", string(cfg.Env)))
+	logger.Info("Server port", zap.Int("port", cfg.Server.Port))
 
 	// Get OpenAPI definition from embedded spec
 	swagger, err := servergen.GetSwagger()
@@ -31,14 +32,7 @@ func main() {
 		log.Fatalf("Error loading swagger spec: %v", err)
 	}
 
-	switch cfg.Env {
-	case config.EnvDev, config.EnvStaging:
-		gin.SetMode(gin.ReleaseMode)
-	default:
-		gin.SetMode(gin.DebugMode)
-	}
-
-	r := gin.New()
+	r := initGin(cfg.Env)
 
 	// Apply CORS rules based on the request path.
 	r.Use(
@@ -47,6 +41,7 @@ func main() {
     	localmiddleware.ZapRecovery(logger),
     	localmiddleware.RequestID(),
 	)
+
 	// Validate requests against the OpenAPI schema.
 	r.Use(ginmiddleware.OapiRequestValidatorWithOptions(
 		swagger,
@@ -66,7 +61,26 @@ func main() {
 	}
 
 	log.Fatal(s.ListenAndServe())
-	
+}
+
+func initLogger(env config.EnvName) *zap.Logger {
+    switch env {
+    case config.EnvDev, config.EnvStaging:
+        return zap.Must(zap.NewDevelopment())
+    default:
+        return zap.Must(zap.NewProduction())
+    }
+}
+
+func initGin(env config.EnvName) *gin.Engine {
+    switch env {
+    case config.EnvDev, config.EnvStaging:
+        gin.SetMode(gin.DebugMode)
+		return gin.New()
+    default:
+        gin.SetMode(gin.ReleaseMode)
+        return gin.New()
+    }
 }
 
 func convertCORSRules(cfg *config.Config) []globalmiddleware.CORSRule {
