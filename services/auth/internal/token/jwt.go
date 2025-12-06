@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/incheat/go-playground/services/auth/pkg/model"
 )
 
 // Maker is a JWT maker.
@@ -21,13 +22,17 @@ func NewMaker(secret string, minutes int) *Maker {
 }
 
 // CreateToken creates a new JWT token for a user.
-func (m *Maker) CreateToken(userID string) (string, error) {
+func (m *Maker) CreateToken(userID string) (model.AccessToken, error) {
 	claims := jwt.MapClaims{
 		"sub": userID,
 		"exp": time.Now().Add(m.expire).Unix(),
 	}
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return t.SignedString(m.secret)
+	token, err := t.SignedString(m.secret)
+	if err != nil {
+		return "", err
+	}
+	return model.AccessToken(token), nil
 }
 
 // ParseUserID parses the user ID from a JWT token.
