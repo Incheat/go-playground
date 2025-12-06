@@ -1,0 +1,12 @@
+server:
+  port: 8081
+
+cors:
+  rules:
+    - path: "/v1/*"
+      allowed_origins:
+        - "*"
+    - path: "/v2/*"
+      allowed_origins:
+        - "https://app.example.com"
+        - "https://cdn.example.com"
