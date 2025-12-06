@@ -10,9 +10,12 @@ This guide describes a clean, scalable directory structure for Go applications�
 /project-root
 │── api/                # OpenAPI specs (source of truth)
 │   └── helloworld/
-│       ├── oapi-codegen.client.yaml
-│       ├── oapi-codegen.server.yaml
-│       └── openapi.yaml # API definition
+│       └── oapi 
+│         ├── internal.yaml # API definition for internal
+│         ├── public.yaml   # API definition for public
+│         ├── internal.client.yaml 
+│         ├── internal.server.yaml 
+│         └── public.server.yaml 
 │
 │── config/              # Configuration files and environment settings
 │    └── config.yaml
@@ -24,7 +27,11 @@ This guide describes a clean, scalable directory structure for Go applications�
 │         ├── internal/
 │         │     ├── api/             # OpenAPI-generated server interfaces
 │         │     │   ├── gen/         # oapi-codegen output (ignored by git)
-│         │     │   │   └── api_gen.go
+│         │     │   │   └── oapi/
+│         │     │   │       └── public/
+│         │     │   │       │   └── api_gen.go
+│         │     │   │       └── private/
+│         │     │   │           └── api_gen.go
 │         │     │   └── router.go    # glue between generated interfaces and handlers
 │         │     ├── config/
 │         │     │   ├── config.go    # your Config struct

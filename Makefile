@@ -4,11 +4,20 @@
 SERVICE ?= helloworld
 
 # Paths based on SERVICE
-SERVER_CONFIG := api/$(SERVICE)/oapi-codegen.server.yaml
-CLIENT_CONFIG := api/$(SERVICE)/oapi-codegen.client.yaml
-OPENAPI := api/$(SERVICE)/openapi.yaml
+PUBLIC_SERVER_CONFIG := api/$(SERVICE)/oapi/public.server.yaml
+PUBLIC_CLIENT_CONFIG := api/$(SERVICE)/oapi/public.client.yaml
+INTERNAL_SERVER_CONFIG := api/$(SERVICE)/oapi/internal.server.yaml
+INTERNAL_CLIENT_CONFIG := api/$(SERVICE)/oapi/internal.client.yaml
+PUBLIC_OPENAPI := api/$(SERVICE)/oapi/public.yaml
+INTERNAL_OPENAPI := api/$(SERVICE)/oapi/internal.yaml
 API_DIR := services/$(SERVICE)/internal/api
 GEN_DIR := $(API_DIR)/gen
+GEN_PUBLIC_DIR := $(GEN_DIR)/oapi/public
+GEN_INTERNAL_DIR := $(GEN_DIR)/oapi/internal
+GEN_PUBLIC_SERVER_FILE := $(GEN_PUBLIC_DIR)/server.gen.go
+GEN_PUBLIC_CLIENT_FILE := $(GEN_PUBLIC_DIR)/client.gen.go
+GEN_INTERNAL_SERVER_FILE := $(GEN_INTERNAL_DIR)/server.gen.go
+GEN_INTERNAL_CLIENT_FILE := $(GEN_INTERNAL_DIR)/client.gen.go
 
 # ----------------------------------------
 # Generate code for one service
@@ -16,19 +25,32 @@ GEN_DIR := $(API_DIR)/gen
 .PHONY: generate
 
 generate:
-	@echo "Generating API code for service: $(SERVICE)"
-	@if [ ! -f "$(OPENAPI)" ]; then \
-		echo "Error: $(OPENAPI) not found!"; \
+	@echo "Generating public API code for service: $(SERVICE)"
+	@if [ ! -f "$(PUBLIC_OPENAPI)" ]; then \
+		echo "Error: $(PUBLIC_OPENAPI) not found!"; \
 		exit 1; \
 	fi
-	mkdir -p $(GEN_DIR)
+	mkdir -p $(GEN_PUBLIC_DIR)
 	oapi-codegen \
-		--config $(SERVER_CONFIG) \
-		$(OPENAPI)
+		--config $(PUBLIC_SERVER_CONFIG) \
+		$(PUBLIC_OPENAPI)
 	oapi-codegen \
-		--config $(CLIENT_CONFIG) \
-		$(OPENAPI)
-	@echo "Done: $(GEN_DIR)/server.gen.go $(GEN_DIR)/client.gen.go"
+		--config $(PUBLIC_CLIENT_CONFIG) \
+		$(PUBLIC_OPENAPI)
+	@echo "Done: $(GEN_PUBLIC_SERVER_FILE) $(GEN_PUBLIC_CLIENT_FILE)"
+	@echo "Generating internal API code for service: $(SERVICE)"
+	@if [ ! -f "$(INTERNAL_OPENAPI)" ]; then \
+		echo "Error: $(INTERNAL_OPENAPI) not found!"; \
+		exit 1; \
+	fi
+	mkdir -p $(GEN_INTERNAL_DIR)
+	oapi-codegen \
+		--config $(INTERNAL_SERVER_CONFIG) \
+		$(INTERNAL_OPENAPI)
+	oapi-codegen \
+		--config $(INTERNAL_CLIENT_CONFIG) \
+		$(INTERNAL_OPENAPI)
+	@echo "Done: $(GEN_INTERNAL_SERVER_FILE) $(GEN_INTERNAL_CLIENT_FILE)"
 
 # ----------------------------------------
 # Generate code for ALL services
