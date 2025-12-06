@@ -5,4 +5,5 @@ const (
 	EnvPrefix     = "APP_"    // APP_SERVER_PORT => server.port
 	EnvConfigDir  = "config"
 	EnvConfigTmpl = "config.%s.yaml"
+	APIResponseVersionV1 = "v1"
 )

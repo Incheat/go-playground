@@ -2,12 +2,10 @@ package http
 
 import (
 	"context"
-	"time"
 
-	"github.com/google/uuid"
-	gen "github.com/incheat/go-playground/services/auth/internal/api/gen/server"
+	gen "github.com/incheat/go-playground/services/auth/internal/api/gen/oapi/public/server"
+	"github.com/incheat/go-playground/services/auth/internal/constant"
 	"github.com/incheat/go-playground/services/auth/internal/controller/auth"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // _ is a placeholder to ensure that Server implements the StrictServerInterface interface.
@@ -23,56 +21,24 @@ func NewHandler(ctrl *auth.Controller) *Handler {
 	return &Handler{ctrl: ctrl}
 }
 
-// Register is the handler for the Register endpoint.
-func (h *Handler) Register(ctx context.Context, request gen.RegisterRequestObject) (gen.RegisterResponseObject, error) {
-
-	accessToken := "test-access-token"
-	refreshToken := "test-refresh-token"
-	return gen.Register201JSONResponse{
-		Body: gen.AuthResponse{
-			AccessToken:  &accessToken,
-			RefreshToken: &refreshToken,
-		},
-		Headers: gen.Register201ResponseHeaders{
-			VersionId: "v1",
-		},
-	}, nil
-}
-
-// GetMe is the handler for the GetMe endpoint.
-func (h *Handler) GetMe(ctx context.Context, request gen.GetMeRequestObject) (gen.GetMeResponseObject, error) {
-
-	id := openapi_types.UUID(uuid.New())
-	email := openapi_types.Email("test@example.com")
-	name := "Test User"
-	createdAt := time.Now()
-
-	dummyUser := gen.User{
-		Id:        &id,
-		Email:     &email,
-		Name:      &name,
-		CreatedAt: &createdAt,
-	}
-
-	return gen.GetMe200JSONResponse{
-		Body: dummyUser,
-		Headers: gen.GetMe200ResponseHeaders{
-			VersionId: "v1",
-		},
-	}, nil
-}
-
 // Login is the handler for the Login endpoint.
 func (h *Handler) Login(ctx context.Context, request gen.LoginRequestObject) (gen.LoginResponseObject, error) {
-	accessToken := "test-access-token"
-	refreshToken := "test-refresh-token"
-	return gen.Login200JSONResponse{
+	email := string(request.Body.Email)
+	password := request.Body.Password
+	accessToken, refreshToken, err := h.ctrl.LoginWithEmailAndPassword(ctx, email, password)
+	if err != nil {
+		return gen.Login500JSONResponse{
+			Error: err.Error(),
+		}, err
+	}
+
+	return gen.Login200JSONResponse	{
 		Body: gen.AuthResponse{
 			AccessToken:  &accessToken,
 			RefreshToken: &refreshToken,
 		},
 		Headers: gen.Login200ResponseHeaders{
-			VersionId: "v1",
+			VersionId: constant.APIResponseVersionV1,
 		},
 	}, nil
 }
@@ -81,7 +47,7 @@ func (h *Handler) Login(ctx context.Context, request gen.LoginRequestObject) (ge
 func (h *Handler) Logout(ctx context.Context, request gen.LogoutRequestObject) (gen.LogoutResponseObject, error) {
 	return gen.Logout204Response{
 		Headers: gen.Logout204ResponseHeaders{
-			VersionId: "v1",
+			VersionId: constant.APIResponseVersionV1,
 		},
 	}, nil
 }

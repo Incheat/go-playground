@@ -6,13 +6,6 @@ cors:
     - path: "/v1/*"
       allowed_origins:
         - "*"
-    - path: "/v2/*"
-      allowed_origins:
-        - "https://app.example.com"
-        - "https://cdn.example.com"
-    - path: "/api/v1/admin/*"
-      allowed_origins:
-        - "https://admin.example.com"
 
 mysql:
   dsn: "auth:authpass@tcp(mysql:3306)/auth?parseTime=true"
@@ -29,7 +22,4 @@ redis:
 #openssl rand -hex 32
 jwt:
   secret: "L8hCW84Q5XiY2Z3aDT28UN1f3uUSgfcQdWlxy3GsB8Q="
-  expire: 60
-
-app:
-  env: "dev"
+  expire: 60 # minutes

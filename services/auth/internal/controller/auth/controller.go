@@ -2,17 +2,10 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/incheat/go-playground/services/auth/pkg/model"
 )
-
-// ErrNotFound is returned when a requested record is not found.
-var ErrMemberNotFound = errors.New("member not found")
-
-// ErrMemberAlreadyExists is returned when a member already exists.
-var ErrMemberAlreadyExists = errors.New("member already exists")
 
 // Controller is the controller for the auth API.
 type Controller struct {
@@ -29,8 +22,8 @@ type RedisClient interface {
 
 // JWTMaker is the interface for the JWT maker.
 type JWTMaker interface {
-	CreateToken(userID string) (string, error)
-	ParseUserID(tokenStr string) (string, error)
+	CreateToken(ID string) (model.AccessToken, error)
+	ParseID(token string) (string, error)
 }
 
 // RefreshTokenRepository is the interface for the refresh token repository.
@@ -42,4 +35,13 @@ type RefreshTokenRepository interface {
 // NewController creates a new Controller.
 func NewController(refreshTokenRepo RefreshTokenRepository, jwt JWTMaker, redis RedisClient) *Controller {
 	return &Controller{refreshTokenRepo: refreshTokenRepo, jwt: jwt, redis: redis}
+}
+
+// LoginWithEmailAndPassword logs in a user with email and password.
+func (c *Controller) LoginWithEmailAndPassword(ctx context.Context, email string, password string) (string, string, error) {
+	accessToken, err := c.jwt.CreateToken(email)
+	if err != nil {
+		return "", "", err
+	}
+	return string(accessToken), "", nil
 }

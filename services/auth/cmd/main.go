@@ -8,11 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	globalmiddleware "github.com/incheat/go-playground/internal/middleware"
 	"github.com/incheat/go-playground/internal/oapi"
-	servergen "github.com/incheat/go-playground/services/auth/internal/api/gen/server"
+	servergen "github.com/incheat/go-playground/services/auth/internal/api/gen/oapi/public/server"
 	"github.com/incheat/go-playground/services/auth/internal/config"
 	"github.com/incheat/go-playground/services/auth/internal/controller/auth"
 	httphandler "github.com/incheat/go-playground/services/auth/internal/handler/http"
 	localmiddleware "github.com/incheat/go-playground/services/auth/internal/middleware"
+	"github.com/incheat/go-playground/services/auth/internal/token"
 	ginmiddleware "github.com/oapi-codegen/gin-middleware"
 	"go.uber.org/zap"
 )
@@ -50,7 +51,8 @@ func main() {
 		}),
 	))
 
-	ctrl := auth.NewController(nil, nil, nil)
+	jwt := token.NewMaker(cfg.JWT.Secret, cfg.JWT.Expire)
+	ctrl := auth.NewController(nil, jwt, nil)
 	srv := httphandler.NewHandler(ctrl)
 	handler := servergen.NewStrictHandler(srv, nil)
 	servergen.RegisterHandlers(r, handler)
