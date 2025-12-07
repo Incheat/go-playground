@@ -1,0 +1,13 @@
+// Package auth defines the result for the auth API.
+package auth
+
+import "github.com/incheat/go-playground/services/auth/pkg/model"
+
+// LoginResult is the result for the login API.
+type LoginResult struct {
+	AccessToken      model.AccessToken
+	RefreshToken     model.RefreshToken
+	RefreshMaxAgeSec int
+	RefreshEndPoint  string
+	RefreshCookie    string
+}

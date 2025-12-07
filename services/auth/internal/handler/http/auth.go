@@ -8,6 +8,7 @@ import (
 	gen "github.com/incheat/go-playground/services/auth/internal/api/gen/oapi/public/server"
 	"github.com/incheat/go-playground/services/auth/internal/constant"
 	"github.com/incheat/go-playground/services/auth/internal/controller/auth"
+	ginmiddleware "github.com/oapi-codegen/gin-middleware"
 )
 
 // _ is a placeholder to ensure that Server implements the StrictServerInterface interface.
@@ -27,41 +28,28 @@ func NewHandler(ctrl *auth.Controller) *Handler {
 func (h *Handler) Login(ctx context.Context, request gen.LoginRequestObject) (gen.LoginResponseObject, error) {
 	email := string(request.Body.Email)
 	password := request.Body.Password
-	success, err := h.ctrl.LoginWithEmailAndPassword(ctx, email, password)
+	gc := ginmiddleware.GetGinContext(ctx)
+	if gc == nil {
+		return gen.Login500JSONResponse{
+			Error: "gin context not found",
+		}, nil
+	}
+	userAgent := gc.Request.UserAgent()
+	ipAddress := gc.ClientIP()
+
+	res, err := h.ctrl.LoginWithEmailAndPassword(ctx, email, password, userAgent, ipAddress)
 	if err != nil {
 		return gen.Login500JSONResponse{
 			Error: err.Error(),
 		}, err
 	}
-	if !success {
-		return gen.Login401JSONResponse{
-			Error: "invalid credentials",
-		}, nil
-	}
 
-	id := email
-	accessToken, err := h.ctrl.GenerateAccessTokenByID(id)
-	if err != nil {
-		return gen.Login500JSONResponse{
-			Error: "failed to generate access token",
-		}, err
-	}
-	accessTokenStr := string(accessToken)
-
-	refreshToken, err := h.ctrl.GenerateRefreshToken()
-	if err != nil {
-		return gen.Login500JSONResponse{
-			Error: "failed to generate refresh token",
-		}, err
-	}
-	refreshTokenStr := string(refreshToken)
-	refreshTokenMaxAge := h.ctrl.RefreshTokenMaxAge()
-	refreshTokenEndPoint := fmt.Sprintf("/%s/%s", constant.APIResponseVersionV1, h.ctrl.RefreshTokenRefreshEndPoint())
-	setCookie := fmt.Sprintf("refresh_token=%s; HttpOnly; Secure; SameSite=Lax; Path=%s; Max-Age=%d", refreshTokenStr, refreshTokenEndPoint, refreshTokenMaxAge)
+	accessToken := string(res.AccessToken)
+	setCookie := fmt.Sprintf("refresh_token=%s; HttpOnly; Secure; SameSite=Lax; Path=/%s/%s; Max-Age=%d", res.RefreshToken, constant.APIResponseVersionV1, res.RefreshEndPoint, res.RefreshMaxAgeSec)
 
 	return gen.Login200JSONResponse{
 		Body: gen.AuthResponse{
-			AccessToken: &accessTokenStr,
+			AccessToken: &accessToken,
 		},
 		Headers: gen.Login200ResponseHeaders{
 			VersionId: constant.APIResponseVersionV1,

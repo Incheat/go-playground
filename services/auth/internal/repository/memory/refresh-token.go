@@ -12,38 +12,40 @@ import (
 // RefreshTokenRepository defines a memory refresh token repository.
 type RefreshTokenRepository struct {
 	sync.RWMutex
-	data map[string]*model.RefreshToken
+	data map[string]*model.RefreshTokenSession
 }
 
 // NewRefreshTokenRepository creates a new memory refresh token repository.
 func NewRefreshTokenRepository() *RefreshTokenRepository {
 	return &RefreshTokenRepository{
-		data: make(map[string]*model.RefreshToken),
+		data: make(map[string]*model.RefreshTokenSession),
 	}
 }
 
-// GetRefreshTokenByID gets a refresh token by ID.
-func (r *RefreshTokenRepository) GetRefreshTokenByID(_ context.Context, id string) (*model.RefreshToken, error) {
+// GetRefreshTokenSession gets a refresh token session by token hash.
+func (r *RefreshTokenRepository) GetRefreshTokenSession(_ context.Context, refreshToken model.RefreshToken) (*model.RefreshTokenSession, error) {
 	r.RLock()
 	defer r.RUnlock()
-	refreshToken, ok := r.data[id]
+	tokenHash := string(refreshToken)
+	refreshTokenSession, ok := r.data[tokenHash]
 	if !ok {
 		return nil, repository.ErrRefreshTokenNotFound
 	}
-	return refreshToken, nil
+	return refreshTokenSession, nil
 }
 
-// CreateRefreshToken creates a new refresh token.
-func (r *RefreshTokenRepository) CreateRefreshToken(_ context.Context, id string, refreshToken *model.RefreshToken) error {
+// SaveRefreshTokenSession saves a refresh token session.
+func (r *RefreshTokenRepository) SaveRefreshTokenSession(_ context.Context, refreshTokenSession *model.RefreshTokenSession) error {
 	r.RLock()
 	defer r.RUnlock()
-	_, ok := r.data[id]
+	tokenHash := string(refreshTokenSession.TokenHash)
+	_, ok := r.data[tokenHash]
 	if ok {
 		return repository.ErrRefreshTokenAlreadyExists
 	}
 
 	r.Lock()
 	defer r.Unlock()
-	r.data[id] = refreshToken
+	r.data[tokenHash] = refreshTokenSession
 	return nil
 }
