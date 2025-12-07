@@ -23,6 +23,11 @@ paths:
               schema:
                 type: string
                 example: v1
+            Set-Cookie:
+              description: HTTP-only, Secure cookie containing the refresh token.
+              schema:
+                type: string
+                Example: Set-Cookie refresh_token=...; HttpOnly; Secure; SameSite=Lax; Path=/v1/refresh; Max-Age=2592000
           content:
             application/json:
               schema:
@@ -117,9 +122,6 @@ components:
         accessToken:
           type: string
           description: JWT access token
-        refreshToken:
-          type: string
-          description: Opaque refresh token stored in Redis
 
     ErrorResponse:
       type: object

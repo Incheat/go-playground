@@ -36,6 +36,11 @@ type Config struct {
 		Expire int    `koanf:"expire"` // minutes
 	} `koanf:"jwt"`
 
+	Refresh struct {
+		NumBytes int `koanf:"num_bytes"`
+		EndPoint string `koanf:"end_point"`
+		MaxAge int `koanf:"max_age"` // seconds
+	} `koanf:"refresh"`
 }
 
 // CORSRule is a rule that defines the CORS configuration for a specific path.

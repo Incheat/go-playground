@@ -1,15 +1,16 @@
-package token
+package jwt_test
 
 import (
 	"testing"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5" // If you're on v3/v4, adjust import path.
+	jwtmaker "github.com/incheat/go-playground/services/auth/internal/token/jwt"
 )
 
 // TestCreateTokenAndParseID_RoundTrip checks the happy path: create a token and parse it back.
 func TestCreateTokenAndParseID_RoundTrip(t *testing.T) {
-	m := NewMaker("test-secret", 15)
+	m := jwtmaker.NewJWTMaker("test-secret", 15)
 	userID := "user-123"
 
 	token, err := m.CreateToken(userID)
@@ -20,7 +21,7 @@ func TestCreateTokenAndParseID_RoundTrip(t *testing.T) {
 		t.Fatal("CreateToken returned empty token")
 	}
 
-	gotID, err := m.ParseID(string(token))
+	gotID, err := m.ParseToken(string(token))
 	if err != nil {
 		t.Fatalf("ParseID error: %v", err)
 	}
@@ -32,7 +33,7 @@ func TestCreateTokenAndParseID_RoundTrip(t *testing.T) {
 // TestCreateToken_ExpClaimCloseToExpected checks that exp is roughly now + expire.
 func TestCreateToken_ExpClaimCloseToExpected(t *testing.T) {
 	const minutes = 15
-	m := NewMaker("test-secret", minutes)
+	m := jwtmaker.NewJWTMaker("test-secret", minutes)
 	userID := "user-123"
 
 	token, err := m.CreateToken(userID)
@@ -70,9 +71,9 @@ func TestCreateToken_ExpClaimCloseToExpected(t *testing.T) {
 
 // TestParseID_InvalidToken ensures a totally invalid string fails.
 func TestParseID_InvalidToken(t *testing.T) {
-	m := NewMaker("test-secret", 5)
+	m := jwtmaker.NewJWTMaker("test-secret", 5)
 
-	id, err := m.ParseID("not-a-jwt")
+	id, err := m.ParseToken("not-a-jwt")
 	if err == nil {
 		t.Fatal("expected error for invalid token, got nil")
 	}
@@ -83,15 +84,15 @@ func TestParseID_InvalidToken(t *testing.T) {
 
 // TestParseID_WrongSecret ensures a token signed with another secret is rejected.
 func TestParseID_WrongSecret(t *testing.T) {
-	m1 := NewMaker("secret-1", 5)
-	m2 := NewMaker("secret-2", 5)
+	m1 := jwtmaker.NewJWTMaker("secret-1", 5)
+	m2 := jwtmaker.NewJWTMaker("secret-2", 5)
 
 	token, err := m1.CreateToken("user-123")
 	if err != nil {
 		t.Fatalf("CreateToken error: %v", err)
 	}
 
-	id, err := m2.ParseID(string(token))
+	id, err := m2.ParseToken(string(token))
 	if err == nil {
 		t.Fatal("expected error when parsing token with wrong secret, got nil")
 	}
@@ -103,7 +104,7 @@ func TestParseID_WrongSecret(t *testing.T) {
 // TestParseID_MissingSubClaim documents behavior when "sub" is missing.
 func TestParseID_MissingSubClaim(t *testing.T) {
 	secret := "test-secret"
-	m := NewMaker(secret, 5)
+	m := jwtmaker.NewJWTMaker(secret, 5)
 
 	claims := jwt.MapClaims{
 		// No "sub" on purpose
@@ -115,7 +116,7 @@ func TestParseID_MissingSubClaim(t *testing.T) {
 		t.Fatalf("SignedString error: %v", err)
 	}
 
-	id, err := m.ParseID(tokenStr)
+	id, err := m.ParseToken(tokenStr)
 	if err != nil {
 		t.Fatalf("ParseID error: %v", err)
 	}
@@ -127,14 +128,14 @@ func TestParseID_MissingSubClaim(t *testing.T) {
 // TestParseID_ExpiredToken ensures expired tokens are rejected.
 func TestParseID_ExpiredToken(t *testing.T) {
 	// Negative minutes => token's exp is already in the past.
-	m := NewMaker("test-secret", -1)
+	m := jwtmaker.NewJWTMaker("test-secret", -1)
 
 	token, err := m.CreateToken("user-123")
 	if err != nil {
 		t.Fatalf("CreateToken error: %v", err)
 	}
 
-	id, err := m.ParseID(string(token))
+	id, err := m.ParseToken(string(token))
 	if err == nil {
 		t.Fatal("expected error for expired token, got nil")
 	}

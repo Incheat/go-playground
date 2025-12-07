@@ -1,0 +1,40 @@
+package opaque
+
+import (
+	"crypto/rand"
+	"encoding/base64"
+	"fmt"
+
+	"github.com/incheat/go-playground/services/auth/pkg/model"
+)
+
+type OpaqueMaker struct {
+	numBytes int
+	maxAge int
+	refreshEndPoint string
+}
+
+// NewOpaqueMaker creates a new OpaqueMaker.
+func NewOpaqueMaker(numBytes int, maxAge int, refreshEndPoint string) *OpaqueMaker {
+	return &OpaqueMaker{numBytes: numBytes, maxAge: maxAge, refreshEndPoint: refreshEndPoint}
+}
+
+// CreateToken creates a URL-safe random token of given byte length.
+func (m *OpaqueMaker) CreateToken() (model.RefreshToken, error) {
+	b := make([]byte, m.numBytes)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("read random bytes: %w", err)
+	}
+	// URL-safe, no padding
+	return model.RefreshToken(base64.RawURLEncoding.EncodeToString(b)), nil
+}
+
+// MaxAge returns the maximum age of the refresh token.
+func (m *OpaqueMaker) MaxAge() int {
+	return m.maxAge
+}
+
+// RefreshEndPoint returns the refresh end point.
+func (m *OpaqueMaker) RefreshEndPoint() string {
+	return m.refreshEndPoint
+}

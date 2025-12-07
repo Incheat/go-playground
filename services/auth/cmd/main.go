@@ -13,7 +13,8 @@ import (
 	"github.com/incheat/go-playground/services/auth/internal/controller/auth"
 	httphandler "github.com/incheat/go-playground/services/auth/internal/handler/http"
 	localmiddleware "github.com/incheat/go-playground/services/auth/internal/middleware"
-	"github.com/incheat/go-playground/services/auth/internal/token"
+	jwtmaker "github.com/incheat/go-playground/services/auth/internal/token/jwt"
+	opaquemaker "github.com/incheat/go-playground/services/auth/internal/token/opaque"
 	ginmiddleware "github.com/oapi-codegen/gin-middleware"
 	"go.uber.org/zap"
 )
@@ -51,8 +52,9 @@ func main() {
 		}),
 	))
 
-	jwt := token.NewMaker(cfg.JWT.Secret, cfg.JWT.Expire)
-	ctrl := auth.NewController(nil, jwt, nil)
+	jwt := jwtmaker.NewJWTMaker(cfg.JWT.Secret, cfg.JWT.Expire)
+	opaque := opaquemaker.NewOpaqueMaker(cfg.Refresh.NumBytes, cfg.Refresh.MaxAge, cfg.Refresh.EndPoint)
+	ctrl := auth.NewController(jwt, opaque, nil)
 	srv := httphandler.NewHandler(ctrl)
 	handler := servergen.NewStrictHandler(srv, nil)
 	servergen.RegisterHandlers(r, handler)

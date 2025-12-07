@@ -9,8 +9,8 @@ import (
 
 // Controller is the controller for the auth API.
 type Controller struct {
-	refreshTokenRepo RefreshTokenRepository
-	jwt JWTMaker
+	accessToken AccessTokenMaker
+	refreshToken RefreshTokenMaker
 	redis RedisClient
 }
 
@@ -20,28 +20,53 @@ type RedisClient interface {
 	Del(ctx context.Context, keys ...string) error
 }
 
-// JWTMaker is the interface for the JWT maker.
-type JWTMaker interface {
+// AccessToken is the interface for the access token.
+type AccessTokenMaker interface {
 	CreateToken(ID string) (model.AccessToken, error)
-	ParseID(token string) (string, error)
+	ParseToken(token string) (string, error)
 }
 
-// RefreshTokenRepository is the interface for the refresh token repository.
-type RefreshTokenRepository interface {
-	GetRefreshTokenByID(ctx context.Context, id string) (*model.RefreshToken, error)
-	CreateRefreshToken(ctx context.Context, id string, refreshToken *model.RefreshToken) error
+// RefreshToken is the interface for the refresh token.
+type RefreshTokenMaker interface {
+	CreateToken() (model.RefreshToken, error)
+	MaxAge() int
+	RefreshEndPoint() string
 }
 
 // NewController creates a new Controller.
-func NewController(refreshTokenRepo RefreshTokenRepository, jwt JWTMaker, redis RedisClient) *Controller {
-	return &Controller{refreshTokenRepo: refreshTokenRepo, jwt: jwt, redis: redis}
+func NewController(accessToken AccessTokenMaker, refreshToken RefreshTokenMaker, redis RedisClient) *Controller {
+	return &Controller{accessToken: accessToken, refreshToken: refreshToken, redis: redis}
 }
 
 // LoginWithEmailAndPassword logs in a user with email and password.
-func (c *Controller) LoginWithEmailAndPassword(ctx context.Context, email string, password string) (string, string, error) {
-	accessToken, err := c.jwt.CreateToken(email)
+func (c *Controller) LoginWithEmailAndPassword(ctx context.Context, email string, password string) (bool, error) {
+	return true, nil
+}
+
+// GenerateAccessToken generates a new access token.
+func (c *Controller) GenerateAccessTokenByID(ID string) (model.AccessToken, error) {
+	accessToken, err := c.accessToken.CreateToken(ID)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
-	return string(accessToken), "", nil
+	return accessToken, nil
+}
+
+// GenerateRefreshToken generates a new refresh token.
+func (c *Controller) GenerateRefreshToken() (model.RefreshToken, error) {
+	refreshToken, err := c.refreshToken.CreateToken()
+	if err != nil {
+		return "", err
+	}
+	return refreshToken, nil
+}
+
+// RefreshTokenMaxAge returns the maximum age of the refresh token.
+func (c *Controller) RefreshTokenMaxAge() int {
+	return c.refreshToken.MaxAge()
+}
+
+// RefreshTokenRefreshEndPoint returns the refresh end point of the refresh token.
+func (c *Controller) RefreshTokenRefreshEndPoint() string {
+	return c.refreshToken.RefreshEndPoint()
 }

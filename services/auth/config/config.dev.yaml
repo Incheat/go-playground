@@ -23,3 +23,8 @@ redis:
 jwt:
   secret: "L8hCW84Q5XiY2Z3aDT28UN1f3uUSgfcQdWlxy3GsB8Q="
   expire: 60 # minutes
+
+refresh:
+  num_bytes: 32
+  end_point: "/refresh"
+  max_age: 2592000 # 30 days
