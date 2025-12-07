@@ -15,14 +15,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ValidateRequest'
+              $ref: '#/components/schemas/ValidateSuccessRequest'
       responses:
         '200':
           description: Token validated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ValidateResponse'
+                $ref: '#/components/schemas/ValidateSuccessResponse'
         '401':
           description: Unauthorized
           content:
@@ -63,7 +63,7 @@ components:
       bearerFormat: JWT
 
   schemas:
-    ValidateRequest:
+    ValidateSuccessRequest:
       type: object
       required: [token]
       properties:
@@ -71,7 +71,7 @@ components:
           type: string
           description: JWT token
 
-    ValidateResponse:
+    ValidateSuccessResponse:
       type: object
       properties:
         valid:

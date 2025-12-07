@@ -1,4 +1,4 @@
-package: gen            # generated package name
+package: server            # generated package name
 
 generate:
   gin-server: true      # ★ Gin server

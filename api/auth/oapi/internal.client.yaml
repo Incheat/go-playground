@@ -1,5 +1,5 @@
 # oapi-codegen.client.yaml
-package: gen
+package: client
 
 generate:
   client: true   # generate HTTP client
