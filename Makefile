@@ -1,3 +1,58 @@
+# ----------------------------------------
+# Makefile for the go-playground project
+# ----------------------------------------
+# --- Go settings ---
+GO              ?= go
+GOFILES         := ./...
+GOMOD           := go.mod
+
+# --- Tools ---
+GOLANGCI_LINT   ?= golangci-lint
+
+# --- Commands ---
+.PHONY: all lint test fmt tidy ci tools
+
+all: lint test
+
+## Run linters (golangci-lint)
+lint:
+	@echo "==> Running golangci-lint..."
+	$(GOLANGCI_LINT) run ./...
+
+## Run Go tests
+test:
+	@echo "==> Running go test..."
+	$(GO) test $(GOFILES) -v
+
+## Format code (goimports + gofmt)
+fmt:
+	@echo "==> Running gofmt..."
+	$(GO) fmt $(GOFILES)
+	@echo "==> Optionally run goimports (uncomment below if installed)..."
+	# goimports -w .
+
+## Keep go.mod / go.sum tidy
+tidy:
+	@echo "==> Running go mod tidy..."
+	$(GO) mod tidy
+
+## CI: run everything you'd want in CI
+ci: lint test
+
+## Install tools (optional helper)
+tools:
+	@echo "==> Installing golangci-lint if missing (Mac with Homebrew)..."
+	@if ! command -v $(GOLANGCI_LINT) >/dev/null 2>&1; then \
+		echo "golangci-lint not found, installing with brew..."; \
+		brew install golangci-lint || echo "Install golangci-lint manually"; \
+	else \
+		echo "golangci-lint already installed"; \
+	fi
+
+# ----------------------------------------
+# Generate code for ALL services
+# ----------------------------------------
+
 # make generate SERVICE=helloworld
 
 # The service to generate code for:
