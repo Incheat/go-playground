@@ -52,9 +52,14 @@ This guide describes a clean, scalable directory structure for Go applications�
 │── scripts/             # CI/CD scripts, build automation, deploy tooling
 │
 │── test/                # Integration, contract, and BDD test structure
-│    ├── pact/           # Consumer/provider contract tests
-│    │    ├── consumer/
-│    │    └── provider/
+│    ├── pacts/           # Consumer/provider contract tests
+│    │   ├── consumer/
+│    │   │   └── auth/
+│    │   │       ├── auth_member_pact_test.go # consumer_provider_pact_test.go, contains all internal api provided by member 
+│    │   │       └── pacts/
+│    │   │           └── auth-member.json   # generated pact file
+│    │   └── provider/
+│    │       └── auth_provider_pact_test.go # verifies pact files from all consumer in one provider test
 │    ├── features/       # Gherkin feature files
 │    ├── steps/          # Step definitions for Godog
 │    └── testutils/      # Shared test data, fixtures, helpers
