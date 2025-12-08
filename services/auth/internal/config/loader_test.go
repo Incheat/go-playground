@@ -7,9 +7,9 @@ import (
 	"github.com/incheat/go-playground/services/auth/internal/constant"
 )
 
-// TestLoad_InvalidEnv verifies that Load returns an error
+// TestUnitLoad_InvalidEnv verifies that Load returns an error
 // when the environment value cannot be treated as a valid EnvName.
-func TestLoad_InvalidEnv(t *testing.T) {
+func TestUnitLoad_InvalidEnv(t *testing.T) {
 	t.Helper()
 
 	// Set an invalid environment name.
@@ -28,13 +28,13 @@ func TestLoad_InvalidEnv(t *testing.T) {
 	}
 }
 
-// TestLoad_ValidEnv_NoFile verifies that Load succeeds when a valid
+// TestUnitLoad_ValidEnv_NoFile verifies that Load succeeds when a valid
 // environment is set and the env-specific config file is either absent
 // or loadable without error.
 //
 // This relies on loadYAMLIfExists *not* failing when the file is missing
 // (which its name strongly implies).
-func TestLoad_ValidEnv_NoFile(t *testing.T) {
+func TestUnitLoad_ValidEnv_NoFile(t *testing.T) {
 	tests := []struct {
 		name    string
 		env     EnvName
@@ -62,8 +62,8 @@ func TestLoad_ValidEnv_NoFile(t *testing.T) {
 	}
 }
 
-// TestMustLoad_PanicsOnError ensures MustLoad panics when Load fails.
-func TestMustLoad_PanicsOnError(t *testing.T) {
+// TestUnitMustLoad_PanicsOnError ensures MustLoad panics when Load fails.
+func TestUnitMustLoad_PanicsOnError(t *testing.T) {
 	t.Helper()
 
 	// Force an error by setting an invalid env again.

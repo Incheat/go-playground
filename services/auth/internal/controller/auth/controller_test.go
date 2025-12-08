@@ -60,7 +60,8 @@ func (m *MockRefreshTokenRepository) SaveRefreshTokenSession(
 	return args.Error(0)
 }
 
-func TestLoginWithEmailAndPassword_Success(t *testing.T) {
+// TestUnitLoginWithEmailAndPassword_Success tests the happy path for LoginWithEmailAndPassword.
+func TestUnitLoginWithEmailAndPassword_Success(t *testing.T) {
 	ctx := context.Background()
 	email := "user@example.com"
 	userAgent := "test-agent"
@@ -145,7 +146,8 @@ func TestLoginWithEmailAndPassword_Success(t *testing.T) {
 	repoMock.AssertExpectations(t)
 }
 
-func TestLoginWithEmailAndPassword_Errors(t *testing.T) {
+// TestUnitLoginWithEmailAndPassword_Errors tests the error cases for LoginWithEmailAndPassword.
+func TestUnitLoginWithEmailAndPassword_Errors(t *testing.T) {
 	ctx := context.Background()
 	email := "user@example.com"
 

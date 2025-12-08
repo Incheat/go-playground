@@ -8,8 +8,8 @@ import (
 	"github.com/incheat/go-playground/services/auth/internal/token"
 )
 
-// TestCreateTokenAndParseID_RoundTrip checks the happy path: create a token and parse it back.
-func TestCreateTokenAndParseID_RoundTrip(t *testing.T) {
+// TestUnitCreateTokenAndParseID_RoundTrip checks the happy path: create a token and parse it back.
+func TestUnitCreateTokenAndParseID_RoundTrip(t *testing.T) {
 	m := token.NewJWTMaker("test-secret", 15)
 	userID := "user-123"
 
@@ -30,8 +30,8 @@ func TestCreateTokenAndParseID_RoundTrip(t *testing.T) {
 	}
 }
 
-// TestCreateToken_ExpClaimCloseToExpected checks that exp is roughly now + expire.
-func TestCreateToken_ExpClaimCloseToExpected(t *testing.T) {
+// TestUnitCreateToken_ExpClaimCloseToExpected checks that exp is roughly now + expire.
+func TestUnitCreateToken_ExpClaimCloseToExpected(t *testing.T) {
 	const minutes = 15
 	m := token.NewJWTMaker("test-secret", minutes)
 	userID := "user-123"
@@ -69,8 +69,8 @@ func TestCreateToken_ExpClaimCloseToExpected(t *testing.T) {
 	}
 }
 
-// TestParseID_InvalidToken ensures a totally invalid string fails.
-func TestParseID_InvalidToken(t *testing.T) {
+// TestUnitParseID_InvalidToken ensures a totally invalid string fails.
+func TestUnitParseID_InvalidToken(t *testing.T) {
 	m := token.NewJWTMaker("test-secret", 5)
 
 	id, err := m.ParseToken("not-a-jwt")
@@ -82,8 +82,8 @@ func TestParseID_InvalidToken(t *testing.T) {
 	}
 }
 
-// TestParseID_WrongSecret ensures a token signed with another secret is rejected.
-func TestParseID_WrongSecret(t *testing.T) {
+// TestUnitParseID_WrongSecret ensures a token signed with another secret is rejected.
+func TestUnitParseID_WrongSecret(t *testing.T) {
 	m1 := token.NewJWTMaker("secret-1", 5)
 	m2 := token.NewJWTMaker("secret-2", 5)
 
@@ -101,8 +101,8 @@ func TestParseID_WrongSecret(t *testing.T) {
 	}
 }
 
-// TestParseID_MissingSubClaim documents behavior when "sub" is missing.
-func TestParseID_MissingSubClaim(t *testing.T) {
+// TestUnitParseID_MissingSubClaim documents behavior when "sub" is missing.
+func TestUnitParseID_MissingSubClaim(t *testing.T) {
 	secret := "test-secret"
 	m := token.NewJWTMaker(secret, 5)
 
@@ -125,8 +125,8 @@ func TestParseID_MissingSubClaim(t *testing.T) {
 	}
 }
 
-// TestParseID_ExpiredToken ensures expired tokens are rejected.
-func TestParseID_ExpiredToken(t *testing.T) {
+// TestUnitParseID_ExpiredToken ensures expired tokens are rejected.
+func TestUnitParseID_ExpiredToken(t *testing.T) {
 	// Negative minutes => token's exp is already in the past.
 	m := token.NewJWTMaker("test-secret", -1)
 

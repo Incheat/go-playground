@@ -13,8 +13,8 @@ repos:
         language: system
         pass_filenames: false
 
-      - id: test
-        name: Run make test
-        entry: make test
+      - id: unit-test
+        name: Run make unit-test
+        entry: make unit-test
         language: system
         pass_filenames: false
