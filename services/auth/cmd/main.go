@@ -13,7 +13,7 @@ import (
 	"github.com/incheat/go-playground/services/auth/internal/config"
 	"github.com/incheat/go-playground/services/auth/internal/controller/auth"
 	handler "github.com/incheat/go-playground/services/auth/internal/handler/http"
-	localmiddleware "github.com/incheat/go-playground/services/auth/internal/middleware"
+	localmiddleware "github.com/incheat/go-playground/services/auth/internal/middleware/gin"
 	memoryrepo "github.com/incheat/go-playground/services/auth/internal/repository/memory"
 	"github.com/incheat/go-playground/services/auth/internal/token"
 	ginmiddleware "github.com/oapi-codegen/gin-middleware"
