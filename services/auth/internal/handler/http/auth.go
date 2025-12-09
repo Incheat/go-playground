@@ -8,7 +8,6 @@ import (
 	gen "github.com/incheat/go-playground/services/auth/internal/api/gen/oapi/public/server"
 	"github.com/incheat/go-playground/services/auth/internal/constant"
 	"github.com/incheat/go-playground/services/auth/internal/controller/auth"
-	ginmiddleware "github.com/oapi-codegen/gin-middleware"
 )
 
 // _ is a placeholder to ensure that Server implements the StrictServerInterface interface.
@@ -28,14 +27,8 @@ func NewHandler(ctrl *auth.Controller) *Handler {
 func (h *Handler) Login(ctx context.Context, request gen.LoginRequestObject) (gen.LoginResponseObject, error) {
 	email := string(request.Body.Email)
 	password := request.Body.Password
-	gc := ginmiddleware.GetGinContext(ctx)
-	if gc == nil {
-		return gen.Login500JSONResponse{
-			Error: "gin context not found",
-		}, nil
-	}
-	userAgent := gc.Request.UserAgent()
-	ipAddress := gc.ClientIP()
+	userAgent := ""
+	ipAddress := ""
 
 	res, err := h.ctrl.LoginWithEmailAndPassword(ctx, email, password, userAgent, ipAddress)
 	if err != nil {

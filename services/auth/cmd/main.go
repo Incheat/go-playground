@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,8 +15,10 @@ import (
 	"github.com/incheat/go-playground/services/auth/internal/controller/auth"
 	handler "github.com/incheat/go-playground/services/auth/internal/handler/http"
 	localmiddleware "github.com/incheat/go-playground/services/auth/internal/middleware"
+	memoryrepo "github.com/incheat/go-playground/services/auth/internal/repository/memory"
 	"github.com/incheat/go-playground/services/auth/internal/token"
 	ginmiddleware "github.com/oapi-codegen/gin-middleware"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -38,22 +41,37 @@ func main() {
 	// Apply CORS rules based on the request path.
 	r.Use(
 		globalmiddleware.PathBasedCORS(convertCORSRules(cfg)),
+		ginmiddleware.OapiRequestValidatorWithOptions(
+			swagger,
+			oapi.NewValidatorOptions(oapi.ValidatorConfig{
+				ProdMode: cfg.Env == config.EnvProd,
+			}),
+		),
+		localmiddleware.RequestID(),
 		localmiddleware.ZapLogger(logger),
 		localmiddleware.ZapRecovery(logger),
-		localmiddleware.RequestID(),
 	)
 
-	// Validate requests against the OpenAPI schema.
-	r.Use(ginmiddleware.OapiRequestValidatorWithOptions(
-		swagger,
-		oapi.NewValidatorOptions(oapi.ValidatorConfig{
-			ProdMode: cfg.Env == config.EnvProd,
-		}),
-	))
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     cfg.Redis.Addr,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
+	})
+	ctx := context.Background()
+	if err := rdb.Ping(ctx).Err(); err != nil {
+		panic(fmt.Errorf("failed to connect to redis: %w", err))
+	}
+	logger.Info("Redis connected", zap.String("addr", cfg.Redis.Addr))
+	defer func() {
+		if err := rdb.Close(); err != nil {
+			log.Printf("failed to close redis: %v", err)
+		}
+	}()
 
+	refreshTokenRepo := memoryrepo.NewRefreshTokenRepository()
 	jwt := token.NewJWTMaker(cfg.JWT.Secret, cfg.JWT.Expire)
 	opaque := token.NewOpaqueMaker(cfg.Refresh.NumBytes, cfg.Refresh.MaxAge, cfg.Refresh.EndPoint)
-	ctrl := auth.NewController(jwt, opaque, nil)
+	ctrl := auth.NewController(jwt, opaque, refreshTokenRepo)
 	srv := handler.NewHandler(ctrl)
 	handler := servergen.NewStrictHandler(srv, nil)
 	servergen.RegisterHandlers(r, handler)

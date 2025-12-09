@@ -1,5 +1,5 @@
-// Package memory defines the memory repository for the refresh token service.
-package memory
+// Package memoryrepo defines the memory repository for the refresh token service.
+package memoryrepo
 
 import (
 	"context"

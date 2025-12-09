@@ -11,8 +11,8 @@ mysql:
   dsn: "auth:authpass@tcp(mysql:3306)/auth?parseTime=true"
 
 redis:
-  addr: "redis:6379"
-  password: ""
+  addr: "localhost:6379"
+  password: "test123"
   db: 0
 
 # generate a random secret key for JWT

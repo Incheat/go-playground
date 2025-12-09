@@ -12,4 +12,6 @@ const (
 	EnvConfigTmpl = "config.%s.yaml"
 	// APIResponseVersionV1 is the version of the API response.
 	APIResponseVersionV1 = "v1"
+	// RedisRefreshTokenPrefix is the prefix for the refresh token in Redis.
+	RedisRefreshTokenPrefix = "refresh_token:"
 )
