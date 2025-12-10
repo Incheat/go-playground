@@ -36,16 +36,15 @@ func (r *RefreshTokenRepository) GetRefreshTokenSession(_ context.Context, refre
 
 // SaveRefreshTokenSession saves a refresh token session.
 func (r *RefreshTokenRepository) SaveRefreshTokenSession(_ context.Context, refreshTokenSession *model.RefreshTokenSession) error {
-	r.RLock()
-	defer r.RUnlock()
+	r.Lock()
+	defer r.Unlock()
+
 	tokenHash := string(refreshTokenSession.TokenHash)
 	_, ok := r.data[tokenHash]
 	if ok {
 		return repository.ErrRefreshTokenAlreadyExists
 	}
 
-	r.Lock()
-	defer r.Unlock()
 	r.data[tokenHash] = refreshTokenSession
 	return nil
 }
