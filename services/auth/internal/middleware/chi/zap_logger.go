@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/incheat/go-playground/services/auth/internal/logctx"
 	"go.uber.org/zap"
 )
 
@@ -12,6 +13,19 @@ import (
 func ZapLogger(logger *zap.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			// Create a logger with the request ID
+			reqID, _ := r.Context().Value(ContextRequestIDKey).(string)
+			if reqID == "" {
+				reqID = "-"
+			}
+
+			// Create a new logger with the request ID
+			requestLogger := logger.With(
+				zap.String(string(ContextRequestIDKey), reqID),
+			)
+			ctx := logctx.WithLogger(r.Context(), requestLogger)
+			r = r.WithContext(ctx)
 
 			start := time.Now()
 
@@ -22,12 +36,6 @@ func ZapLogger(logger *zap.Logger) func(next http.Handler) http.Handler {
 			next.ServeHTTP(ww, r)
 
 			latency := time.Since(start)
-
-			// Get request ID from context
-			reqID, _ := r.Context().Value(ContextRequestIDKey).(string)
-			if reqID == "" {
-				reqID = "-"
-			}
 
 			clientIP := r.RemoteAddr // similar to Gin's ClientIP()
 
