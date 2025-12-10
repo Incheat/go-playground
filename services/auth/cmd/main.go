@@ -65,6 +65,7 @@ func main() {
 	))
 	router.Use(globalchimiddleware.PathBasedCORS(convertCORSRules(cfg)))
 	router.Use(chimiddleware.RequestID())
+	router.Use(chimiddleware.ZapLogger(logger))
 
 	// Auth components
 	refreshTokenRepository := memoryrepo.NewRefreshTokenRepository()
