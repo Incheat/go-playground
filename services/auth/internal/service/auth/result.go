@@ -1,5 +1,5 @@
-// Package auth defines the result for the auth API.
-package auth
+// Package authservice defines the result for the auth API.
+package authservice
 
 import "github.com/incheat/go-playground/services/auth/pkg/model"
 

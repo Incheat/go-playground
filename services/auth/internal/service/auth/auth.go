@@ -1,5 +1,5 @@
-// Package auth defines the controller for the auth API.
-package auth
+// Package authservice defines the service for the auth API.
+package authservice
 
 import (
 	"context"
@@ -9,8 +9,8 @@ import (
 	"github.com/incheat/go-playground/services/auth/pkg/model"
 )
 
-// Controller is the controller for the auth API.
-type Controller struct {
+// Service is the service for the auth API.
+type Service struct {
 	accessToken      AccessTokenMaker
 	refreshToken     RefreshTokenMaker
 	refreshTokenRepo RefreshTokenRepository
@@ -34,29 +34,29 @@ type RefreshTokenRepository interface {
 	SaveRefreshTokenSession(ctx context.Context, session *model.RefreshTokenSession) error
 }
 
-// NewController creates a new Controller.
-func NewController(accessToken AccessTokenMaker, refreshToken RefreshTokenMaker, refreshTokenRepo RefreshTokenRepository) *Controller {
-	return &Controller{accessToken: accessToken, refreshToken: refreshToken, refreshTokenRepo: refreshTokenRepo}
+// New creates a new Service.
+func New(accessToken AccessTokenMaker, refreshToken RefreshTokenMaker, refreshTokenRepo RefreshTokenRepository) *Service {
+	return &Service{accessToken: accessToken, refreshToken: refreshToken, refreshTokenRepo: refreshTokenRepo}
 }
 
 // LoginWithEmailAndPassword logs in a user with email and password.
-func (c *Controller) LoginWithEmailAndPassword(ctx context.Context, email string, _ string, userAgent, ipAddress string) (*LoginResult, error) {
+func (s *Service) LoginWithEmailAndPassword(ctx context.Context, email string, _ string, userAgent, ipAddress string) (*LoginResult, error) {
 
 	memberID := email
 
-	accessToken, err := c.accessToken.CreateToken(memberID)
+	accessToken, err := s.accessToken.CreateToken(memberID)
 	if err != nil {
 		return nil, err
 	}
 
-	refreshToken, err := c.refreshToken.CreateToken()
+	refreshToken, err := s.refreshToken.CreateToken()
 	if err != nil {
 		return nil, err
 	}
 
 	now := time.Now()
-	maxAge := c.refreshToken.MaxAge()
-	refreshEndPoint := c.refreshToken.RefreshEndPoint()
+	maxAge := s.refreshToken.MaxAge()
+	refreshEndPoint := s.refreshToken.RefreshEndPoint()
 
 	refreshTokenSession := &model.RefreshTokenSession{
 		ID:        uuid.NewString(),
@@ -67,7 +67,7 @@ func (c *Controller) LoginWithEmailAndPassword(ctx context.Context, email string
 		UserAgent: userAgent,
 		IPAddress: ipAddress,
 	}
-	err = c.refreshTokenRepo.SaveRefreshTokenSession(ctx, refreshTokenSession)
+	err = s.refreshTokenRepo.SaveRefreshTokenSession(ctx, refreshTokenSession)
 	if err != nil {
 		return nil, err
 	}

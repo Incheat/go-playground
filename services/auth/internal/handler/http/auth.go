@@ -1,38 +1,38 @@
-// Package handler defines the handlers for the Auth API.
-package handler
+// Package authhandler defines the server for the Auth API.
+package authhandler
 
 import (
 	"context"
 	"fmt"
 
-	gen "github.com/incheat/go-playground/services/auth/internal/api/gen/oapi/public/server"
+	servergen "github.com/incheat/go-playground/services/auth/internal/api/gen/oapi/public/server"
 	"github.com/incheat/go-playground/services/auth/internal/constant"
-	"github.com/incheat/go-playground/services/auth/internal/controller/auth"
+	authservice "github.com/incheat/go-playground/services/auth/internal/service/auth"
 )
 
 // _ is a placeholder to ensure that Server implements the StrictServerInterface interface.
-var _ gen.StrictServerInterface = (*Handler)(nil)
+var _ servergen.StrictServerInterface = (*Server)(nil)
 
-// Handler is the handler for the Auth API.
-type Handler struct {
-	ctrl *auth.Controller
+// Server is the server for the Auth API.
+type Server struct {
+	service *authservice.Service
 }
 
-// NewHandler creates a new Handler.
-func NewHandler(ctrl *auth.Controller) *Handler {
-	return &Handler{ctrl: ctrl}
+// New creates a new Server.
+func New(service *authservice.Service) *Server {
+	return &Server{service: service}
 }
 
-// Login is the handler for the Login endpoint.
-func (h *Handler) Login(ctx context.Context, request gen.LoginRequestObject) (gen.LoginResponseObject, error) {
+// Login is the server for the Login endpoint.
+func (h *Server) Login(ctx context.Context, request servergen.LoginRequestObject) (servergen.LoginResponseObject, error) {
 	email := string(request.Body.Email)
 	password := request.Body.Password
 	userAgent := ""
 	ipAddress := ""
 
-	res, err := h.ctrl.LoginWithEmailAndPassword(ctx, email, password, userAgent, ipAddress)
+	res, err := h.service.LoginWithEmailAndPassword(ctx, email, password, userAgent, ipAddress)
 	if err != nil {
-		return gen.Login500JSONResponse{
+		return servergen.Login500JSONResponse{
 			Error: err.Error(),
 		}, err
 	}
@@ -40,21 +40,21 @@ func (h *Handler) Login(ctx context.Context, request gen.LoginRequestObject) (ge
 	accessToken := string(res.AccessToken)
 	setCookie := fmt.Sprintf("refresh_token=%s; HttpOnly; Secure; SameSite=Lax; Path=/%s/%s; Max-Age=%d", res.RefreshToken, constant.APIResponseVersionV1, res.RefreshEndPoint, res.RefreshMaxAgeSec)
 
-	return gen.Login200JSONResponse{
-		Body: gen.AuthResponse{
+	return servergen.Login200JSONResponse{
+		Body: servergen.AuthResponse{
 			AccessToken: &accessToken,
 		},
-		Headers: gen.Login200ResponseHeaders{
+		Headers: servergen.Login200ResponseHeaders{
 			VersionId: constant.APIResponseVersionV1,
 			SetCookie: setCookie,
 		},
 	}, nil
 }
 
-// Logout is the handler for the Logout endpoint.
-func (h *Handler) Logout(_ context.Context, _ gen.LogoutRequestObject) (gen.LogoutResponseObject, error) {
-	return gen.Logout204Response{
-		Headers: gen.Logout204ResponseHeaders{
+// Logout is the server for the Logout endpoint.
+func (h *Server) Logout(_ context.Context, _ servergen.LogoutRequestObject) (servergen.LogoutResponseObject, error) {
+	return servergen.Logout204Response{
+		Headers: servergen.Logout204ResponseHeaders{
 			VersionId: constant.APIResponseVersionV1,
 		},
 	}, nil

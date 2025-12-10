@@ -1,4 +1,4 @@
-package auth_test
+package authservice_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/incheat/go-playground/services/auth/internal/controller/auth"
+	authservice "github.com/incheat/go-playground/services/auth/internal/service/auth"
 	"github.com/incheat/go-playground/services/auth/pkg/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -129,7 +129,7 @@ func TestUnitLoginWithEmailAndPassword_Success(t *testing.T) {
 		Return(nil).
 		Once()
 
-	ctrl := auth.NewController(accessMock, refreshMock, repoMock)
+	ctrl := authservice.New(accessMock, refreshMock, repoMock)
 
 	result, err := ctrl.LoginWithEmailAndPassword(ctx, email, "password", userAgent, ip)
 	require.NoError(t, err)
@@ -218,7 +218,7 @@ func TestUnitLoginWithEmailAndPassword_Errors(t *testing.T) {
 
 			tt.setupMocks(accessMock, refreshMock, repoMock)
 
-			ctrl := auth.NewController(accessMock, refreshMock, repoMock)
+			ctrl := authservice.New(accessMock, refreshMock, repoMock)
 
 			result, err := ctrl.LoginWithEmailAndPassword(ctx, email, "password", "agent", "ip")
 			require.Error(t, err)
