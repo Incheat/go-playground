@@ -12,6 +12,7 @@ import (
 	servergen "github.com/incheat/go-playground/services/auth/internal/api/gen/oapi/public/server"
 	"github.com/incheat/go-playground/services/auth/internal/config"
 	authhandler "github.com/incheat/go-playground/services/auth/internal/handler/http"
+	chimiddleware "github.com/incheat/go-playground/services/auth/internal/middleware/chi"
 	memoryrepo "github.com/incheat/go-playground/services/auth/internal/repository/memory"
 	authservice "github.com/incheat/go-playground/services/auth/internal/service/auth"
 	"github.com/incheat/go-playground/services/auth/internal/token"
@@ -63,6 +64,7 @@ func main() {
 		}),
 	))
 	router.Use(globalchimiddleware.PathBasedCORS(convertCORSRules(cfg)))
+	router.Use(chimiddleware.RequestID())
 
 	// Auth components
 	refreshTokenRepository := memoryrepo.NewRefreshTokenRepository()
