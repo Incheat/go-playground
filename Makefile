@@ -29,6 +29,11 @@ unit-test:
 	@echo "==> Running go test..."
 	$(GO) test $(GOFILES) -run Unit -short
 
+## Run Pact tests
+pact-test:
+	@echo "==> Running pact tests..."
+	$(GO) test $(GOFILES) -run Pact -short
+
 ## Format code (goimports + gofmt)
 fmt:
 	@echo "==> Running gofmt..."
