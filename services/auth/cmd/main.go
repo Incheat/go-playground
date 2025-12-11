@@ -13,7 +13,7 @@ import (
 	"github.com/incheat/go-playground/services/auth/internal/config"
 	authhandler "github.com/incheat/go-playground/services/auth/internal/handler/http"
 	chimiddleware "github.com/incheat/go-playground/services/auth/internal/middleware/chi"
-	memoryrepo "github.com/incheat/go-playground/services/auth/internal/repository/memory"
+	redisrepo "github.com/incheat/go-playground/services/auth/internal/repository/redis"
 	authservice "github.com/incheat/go-playground/services/auth/internal/service/auth"
 	"github.com/incheat/go-playground/services/auth/internal/token"
 	nethttpmiddleware "github.com/oapi-codegen/nethttp-middleware"
@@ -65,11 +65,12 @@ func main() {
 	))
 	router.Use(globalchimiddleware.PathBasedCORS(convertCORSRules(cfg)))
 	router.Use(chimiddleware.RequestID())
+	router.Use(chimiddleware.HTTPRequest())
 	router.Use(chimiddleware.ZapLogger(logger))
 	router.Use(chimiddleware.ZapRecovery(logger))
 
 	// Auth components
-	refreshTokenRepository := memoryrepo.NewRefreshTokenRepository()
+	refreshTokenRepository := redisrepo.NewRefreshTokenRepository(redisClient)
 
 	jwtTokenMaker := token.NewJWTMaker(cfg.JWT.Secret, cfg.JWT.Expire)
 	opaqueTokenMaker := token.NewOpaqueMaker(

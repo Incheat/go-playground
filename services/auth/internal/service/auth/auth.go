@@ -64,6 +64,7 @@ func (s *Service) LoginWithEmailAndPassword(ctx context.Context, email string, _
 		TokenHash: refreshToken,
 		ExpiresAt: now.Add(time.Duration(maxAge) * time.Second),
 		CreatedAt: now,
+		RevokedAt: time.Time{}, // not revoked yet, set to zero value
 		UserAgent: userAgent,
 		IPAddress: ipAddress,
 	}
