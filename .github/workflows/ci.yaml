@@ -39,10 +39,13 @@ jobs:
           echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
       - name: Install pact-go and libpact_ffi
+        env:
+          PACT_LIB_DIR: /tmp/pact
         run: |
+          mkdir -p "$PACT_LIB_DIR"
           go install github.com/pact-foundation/pact-go/v2@latest
           export PATH="$(go env GOPATH)/bin:$PATH"
-          pact-go -l DEBUG install
+          pact-go -l DEBUG install --libDir "$PACT_LIB_DIR"
 
       - name: Generate API code for all services
         run: make generate-all
@@ -60,6 +63,10 @@ jobs:
           go test $PKGS -v -coverprofile=coverage.txt
 
       - name: Run Pact tests
+        env:
+          PACT_LIB_DIR: /tmp/pact
+          LD_LIBRARY_PATH: /tmp/pact
+          CGO_LDFLAGS: "-L/tmp/pact"
         run: |
           export PATH="$(go env GOPATH)/bin:$PATH"
           go test ./test/pacts/... -v
