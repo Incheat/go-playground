@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/incheat/go-playground/services/auth/internal/logctx"
+	chimiddlewareutils "github.com/incheat/go-playground/services/auth/internal/middleware/chi/utils"
 	"go.uber.org/zap"
 )
 
@@ -24,7 +24,7 @@ func ZapLogger(logger *zap.Logger) func(next http.Handler) http.Handler {
 			requestLogger := logger.With(
 				zap.String(string(ContextRequestIDKey), reqID),
 			)
-			ctx := logctx.WithLogger(r.Context(), requestLogger)
+			ctx := chimiddlewareutils.WithLogger(r.Context(), requestLogger)
 			r = r.WithContext(ctx)
 
 			start := time.Now()

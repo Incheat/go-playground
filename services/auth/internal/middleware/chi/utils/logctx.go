@@ -1,5 +1,5 @@
-// Package logctx defines the context for the logger.
-package logctx
+// Package chimiddlewareutils defines the context for the chi middleware utils.
+package chimiddlewareutils
 
 import (
 	"context"
@@ -14,8 +14,8 @@ func WithLogger(ctx context.Context, logger *zap.Logger) context.Context {
 	return context.WithValue(ctx, loggerKey{}, logger)
 }
 
-// From gets the logger from the context.
-func From(ctx context.Context) *zap.Logger {
+// GetLogger gets the logger from the context.
+func GetLogger(ctx context.Context) *zap.Logger {
 	logger, ok := ctx.Value(loggerKey{}).(*zap.Logger)
 	if !ok {
 		// fallback to global logger
