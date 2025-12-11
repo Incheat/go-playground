@@ -97,8 +97,8 @@ func TestVerifyUserCredentialsPact(t *testing.T) {
 
 		// You can tweak these to match your repo layout
 		// They’re relative to the module root when you run `go test`.
-		PactDir: "./test/pacts/consumer/auth/http/pacts",
-		LogDir:  "./test/pacts/consumer/auth/http/logs",
+		PactDir: "./pacts",
+		LogDir:  "./logs",
 	})
 	assert.NoError(t, err)
 
