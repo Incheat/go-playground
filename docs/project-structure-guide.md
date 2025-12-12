@@ -39,12 +39,13 @@ This guide describes a clean, scalable directory structure for Go applications�
 │         │     ├── service(controller)/      # Business logic / domain controllers
 │         │     ├── handler/  # API handlers or StrictServerInterface implementation for (HTTP, gRPC)
 │         │     ├── security/        # Auth, RBAC, middleware
-│         │     └── repository/      # Database & Redis implementations
+│         │     ├── repository/      # Database & Redis implementations
+│         │     └── test/      
+│         │         └── provider/    # auth_provider_pact_test.go # verifies pact files from all consumer in one provider test
 │         └── config/                # YAML files, mounted in Docker, etc.
 │             ├── config.yaml
 │             ├── config.dev.yaml
 │             └── config.prod.yaml
-│
 │── internal/            # Shared utilities (logger, middleware, helpers)
 │
 │── migrations/          # Database migrations (goose, migrate, etc.)
@@ -53,17 +54,14 @@ This guide describes a clean, scalable directory structure for Go applications�
 │
 │── test/                # Integration, contract, and BDD test structure
 │    ├── pacts/           # Consumer/provider contract tests
-│    │   ├── consumer/
-│    │   │   └── auth/
-│    │   │       ├── auth_member_pact_test.go # consumer_provider_pact_test.go, contains all internal api provided by member 
-│    │   │       └── pacts/
-│    │   │           └── auth-member.json   # generated pact file
-│    │   └── provider/
-│    │       └── auth_provider_pact_test.go # verifies pact files from all consumer in one provider test
+│    │   └── consumer/
+│    │       └── auth/
+│    │           ├── auth_member_pact_test.go # consumer_provider_pact_test.go, contains all internal api provided by member 
+│    │           └── pacts/
+│    │               └── auth-member.json   # generated pact file
 │    ├── features/       # Gherkin feature files
 │    ├── steps/          # Step definitions for Godog
 │    └── testutils/      # Shared test data, fixtures, helpers
-│
 │── Makefile             # Build shortcuts and developer tasks
 │── README.md            # Project overview and instructions
 │── docker-compose.yaml  # Local dev environment setup
