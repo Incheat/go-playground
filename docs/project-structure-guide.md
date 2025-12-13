@@ -32,9 +32,10 @@ This guide describes a clean, scalable directory structure for Go applications�
 │         │     │   │   │   │   └── api_gen.go
 │         │     │   │   │   └── private/
 │         │     │   │   │       └── api_gen.go
-│         │     │   │   └── db/
-│         │     │   │       └── db.go
 │         │     │   └── router.go    # glue between generated interfaces and handlers
+│         │     ├── db/
+│         │     │   └── gen/
+│         │     │       └── db.go
 │         │     ├── config/
 │         │     │   ├── config.go    # your Config struct
 │         │     │   └── loader.go    # your Load / MustLoad
