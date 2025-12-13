@@ -2,9 +2,11 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	globalchimiddleware "github.com/incheat/go-playground/internal/middleware/chi"
@@ -12,7 +14,7 @@ import (
 	"github.com/incheat/go-playground/services/user/internal/config"
 	userhandler "github.com/incheat/go-playground/services/user/internal/handler/http"
 	chimiddleware "github.com/incheat/go-playground/services/user/internal/middleware/chi"
-	userrepo "github.com/incheat/go-playground/services/user/internal/repository/memory"
+	userrepo "github.com/incheat/go-playground/services/user/internal/repository/mysql"
 	userservice "github.com/incheat/go-playground/services/user/internal/service/user"
 	nethttpmiddleware "github.com/oapi-codegen/nethttp-middleware"
 	"go.uber.org/zap"
@@ -46,8 +48,28 @@ func main() {
 	router.Use(chimiddleware.ZapLogger(logger))
 	router.Use(chimiddleware.ZapRecovery(logger))
 
+	// Initialize MySQL connection
+	logger.Info("Initializing MySQL connection", zap.String("dsn", cfg.MySQL.DSN))
+	dbConn, err := sql.Open("mysql", cfg.MySQL.DSN)
+	dbConn.SetMaxOpenConns(cfg.MySQL.MaxOpenConns)
+	dbConn.SetMaxIdleConns(cfg.MySQL.MaxIdleConns)
+	dbConn.SetConnMaxLifetime(time.Duration(cfg.MySQL.ConnMaxLifetime) * time.Second)
+	if err != nil {
+		log.Fatalf("Error opening MySQL connection: %v", err)
+	}
+	defer func() {
+		if err := dbConn.Close(); err != nil {
+			logger.Warn("Failed to close MySQL connection", zap.Error(err))
+		}
+	}()
+
+	// Check if the connection is working
+	if err := dbConn.Ping(); err != nil {
+		log.Fatalf("Error pinging MySQL: %v", err)
+	}
+
 	// user components
-	userRepository := userrepo.NewUserRepository()
+	userRepository := userrepo.NewUserRepository(dbConn)
 
 	userService := userservice.New(userRepository)
 	userImpl := userhandler.New(userService)
