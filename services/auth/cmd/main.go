@@ -80,7 +80,10 @@ func main() {
 		cfg.Refresh.EndPoint,
 	)
 
-	userGateway := usergateway.NewUserGateway("")
+	userGateway, err := usergateway.NewUserGateway(cfg.UserService.BaseURL)
+	if err != nil {
+		log.Fatalf("Error creating user gateway: %v", err)
+	}
 	authService := authservice.New(jwtTokenMaker, opaqueTokenMaker, refreshTokenRepository, userGateway)
 	authImpl := authhandler.New(authService)
 

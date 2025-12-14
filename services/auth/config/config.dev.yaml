@@ -7,6 +7,9 @@ cors:
       allowed_origins:
         - "*"
 
+user_service:
+  base_url: "http://localhost:8082"
+
 mysql:
   dsn: "auth:authpass@tcp(mysql:3306)/auth?parseTime=true"
 

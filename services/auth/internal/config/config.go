@@ -25,6 +25,10 @@ type Config struct {
 		Rules []CORSRule `koanf:"rules"`
 	} `koanf:"cors"`
 
+	UserService struct {
+		BaseURL string `koanf:"base_url"`
+	} `koanf:"user_service"`
+
 	MySQL struct {
 		DSN string `koanf:"dsn"` // e.g. user:pass@tcp(mysql:3306)/auth?parseTime=true
 	} `koanf:"mysql"`

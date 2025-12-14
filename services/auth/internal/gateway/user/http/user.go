@@ -3,48 +3,76 @@ package usergateway
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"net/http"
 	"time"
+
+	clientgen "github.com/incheat/go-playground/api/user/oapi/gen/private" // TODO: 改成你的生成路徑
+	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	usermodel "github.com/incheat/go-playground/services/user/pkg/model"
 )
 
 // UserGateway is the gateway for the user service.
 type UserGateway struct {
-	baseURL    string
-	httpClient *http.Client
+	client *clientgen.ClientWithResponses
 }
 
 // NewUserGateway creates a new UserGateway.
-func NewUserGateway(baseURL string) *UserGateway {
-	return &UserGateway{
-		baseURL: baseURL,
-		httpClient: &http.Client{
-			Timeout: 2 * time.Second,
-		},
+func NewUserGateway(baseURL string) (*UserGateway, error) {
+	httpClient := &http.Client{Timeout: 2 * time.Second}
+
+	c, err := clientgen.NewClientWithResponses(
+		baseURL,
+		clientgen.WithHTTPClient(httpClient),
+	)
+	if err != nil {
+		return nil, err
 	}
+
+	return &UserGateway{client: c}, nil
 }
 
 // VerifyCredentials verifies a user's credentials.
-func (g *UserGateway) VerifyCredentials(_ context.Context, _ string, _ string) (*usermodel.User, error) {
-	req, err := http.NewRequest(http.MethodPost, g.baseURL+"/internal/users/verify", nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
+func (g *UserGateway) VerifyCredentials(ctx context.Context, email string, password string) (*usermodel.User, error) {
+	// var editors []clientgen.RequestEditorFn
+	// if token != "" {
+	// 	editors = append(editors, func(ctx context.Context, req *http.Request) error {
+	// 		req.Header.Set("Authorization", "Bearer "+token)
+	// 		return nil
+	// 	})
+	// }
 
-	resp, err := g.httpClient.Do(req)
+	resp, err := g.client.VerifyUserCredentialsWithResponse(
+		ctx,
+		clientgen.VerifyUserCredentialsJSONRequestBody{
+			Email:    openapi_types.Email(email),
+			Password: password,
+		},
+		// editors...,
+	)
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("close response body: %v", err)
+
+	switch resp.StatusCode() {
+	case http.StatusOK:
+		if resp.JSON200 == nil {
+			return nil, fmt.Errorf("user verify: 200 but empty JSON body")
 		}
-	}()
+		return &usermodel.User{
+			ID:     resp.JSON200.Id,
+			Email:  string(resp.JSON200.Email),
+			Status: resp.JSON200.Status,
+		}, nil
 
-	var user usermodel.User
-	return &user, nil
+	case http.StatusUnauthorized:
+		if resp.JSON401 != nil {
+			return nil, fmt.Errorf("user verify unauthorized: %s", resp.JSON401.Error)
+		}
+		return nil, fmt.Errorf("user verify unauthorized")
+
+	default:
+		return nil, fmt.Errorf("user verify unexpected status=%d body=%s", resp.StatusCode(), string(resp.Body))
+	}
 }
