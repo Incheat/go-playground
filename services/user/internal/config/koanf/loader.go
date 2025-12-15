@@ -1,4 +1,5 @@
-package config
+// Package koanfconfig defines the loader for the user service.
+package koanfconfig
 
 import (
 	"errors"

@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	servergen "github.com/incheat/go-playground/services/user/internal/api/oapi/gen/private/server"
-	"github.com/incheat/go-playground/services/user/internal/config"
+	envconfig "github.com/incheat/go-playground/services/user/internal/config/env"
 	userhandler "github.com/incheat/go-playground/services/user/internal/handler/http"
 	chimiddleware "github.com/incheat/go-playground/services/user/internal/middleware/chi"
 	userrepo "github.com/incheat/go-playground/services/user/internal/repository/mysql"
@@ -22,11 +22,14 @@ import (
 
 func main() {
 
-	cfg := config.MustLoad()
-	logger := initLogger(cfg.Env)
+	cfg, err := envconfig.Load()
+	if err != nil {
+		log.Fatalf("Error loading config: %v", err)
+	}
+	logger := initLogger(envconfig.EnvName(cfg.Env))
 
 	logger.Info("Starting user service", zap.String("env", string(cfg.Env)))
-	logger.Info("Server port", zap.Int("port", cfg.Server.Port))
+	logger.Info("Http server internal port", zap.Int("port", int(cfg.Server.InternalPort)))
 
 	// Get OpenAPI definition from embedded spec
 	openAPISpec, err := servergen.GetSwagger()
@@ -39,7 +42,7 @@ func main() {
 	router.Use(nethttpmiddleware.OapiRequestValidatorWithOptions(
 		openAPISpec,
 		chimiddleware.NewValidatorOptions(chimiddleware.ValidatorConfig{
-			ProdMode: cfg.Env == config.EnvProd,
+			ProdMode: cfg.Env == envconfig.EnvProd,
 		}),
 	))
 	// router.Use(chimiddleware.PathBasedCORS(convertCORSRules(cfg)))
@@ -48,8 +51,12 @@ func main() {
 	router.Use(chimiddleware.ZapRecovery(logger))
 
 	// Initialize MySQL connection
-	logger.Info("Initializing MySQL connection", zap.String("dsn", cfg.MySQL.DSN))
-	dbConn, err := sql.Open("mysql", cfg.MySQL.DSN)
+	dbDSN := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true", cfg.MySQL.User, cfg.MySQL.Password, cfg.MySQL.Host, cfg.MySQL.DBName)
+	logger.Info("Initializing MySQL connection", zap.String("dsn", dbDSN))
+	dbConn, err := sql.Open("mysql", dbDSN)
+	if err != nil {
+		log.Fatalf("Error opening MySQL connection: %v", err)
+	}
 	dbConn.SetMaxOpenConns(cfg.MySQL.MaxOpenConns)
 	dbConn.SetMaxIdleConns(cfg.MySQL.MaxIdleConns)
 	dbConn.SetConnMaxLifetime(time.Duration(cfg.MySQL.ConnMaxLifetime) * time.Second)
@@ -79,7 +86,7 @@ func main() {
 	var g errgroup.Group
 
 	g.Go(func() error {
-		return http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), apiHandler)
+		return http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.InternalPort), apiHandler)
 	})
 
 	if err := g.Wait(); err != nil {
@@ -88,9 +95,9 @@ func main() {
 
 }
 
-func initLogger(env config.EnvName) *zap.Logger {
+func initLogger(env envconfig.EnvName) *zap.Logger {
 	switch env {
-	case config.EnvDev, config.EnvStaging:
+	case envconfig.EnvDev, envconfig.EnvStaging:
 		return zap.Must(zap.NewDevelopment())
 	default:
 		return zap.Must(zap.NewProduction())
