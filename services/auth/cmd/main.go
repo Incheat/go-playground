@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	globalchimiddleware "github.com/incheat/go-playground/internal/middleware/chi"
 	servergen "github.com/incheat/go-playground/services/auth/internal/api/oapi/gen/public/server"
 	envconfig "github.com/incheat/go-playground/services/auth/internal/config/env"
 	usergateway "github.com/incheat/go-playground/services/auth/internal/gateway/user/http"
@@ -64,7 +63,7 @@ func main() {
 	router := chi.NewRouter()
 	router.Use(nethttpmiddleware.OapiRequestValidatorWithOptions(
 		openAPISpec,
-		globalchimiddleware.NewValidatorOptions(globalchimiddleware.ValidatorConfig{
+		chimiddleware.NewValidatorOptions(chimiddleware.ValidatorConfig{
 			ProdMode: cfg.Env == envconfig.EnvProd,
 		}),
 	))

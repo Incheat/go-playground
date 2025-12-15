@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	globalchimiddleware "github.com/incheat/go-playground/internal/middleware/chi"
 	servergen "github.com/incheat/go-playground/services/user/internal/api/oapi/gen/private/server"
 	"github.com/incheat/go-playground/services/user/internal/config"
 	userhandler "github.com/incheat/go-playground/services/user/internal/handler/http"
@@ -39,11 +38,11 @@ func main() {
 	router := chi.NewRouter()
 	router.Use(nethttpmiddleware.OapiRequestValidatorWithOptions(
 		openAPISpec,
-		globalchimiddleware.NewValidatorOptions(globalchimiddleware.ValidatorConfig{
+		chimiddleware.NewValidatorOptions(chimiddleware.ValidatorConfig{
 			ProdMode: cfg.Env == config.EnvProd,
 		}),
 	))
-	router.Use(globalchimiddleware.PathBasedCORS(convertCORSRules(cfg)))
+	// router.Use(chimiddleware.PathBasedCORS(convertCORSRules(cfg)))
 	router.Use(chimiddleware.RequestID())
 	router.Use(chimiddleware.ZapLogger(logger))
 	router.Use(chimiddleware.ZapRecovery(logger))
@@ -96,15 +95,4 @@ func initLogger(env config.EnvName) *zap.Logger {
 	default:
 		return zap.Must(zap.NewProduction())
 	}
-}
-
-func convertCORSRules(cfg *config.Config) []globalchimiddleware.CORSRule {
-	corsRules := make([]globalchimiddleware.CORSRule, len(cfg.CORS.Rules))
-	for i, rule := range cfg.CORS.Rules {
-		corsRules[i] = globalchimiddleware.CORSRule{
-			Path:           rule.Path,
-			AllowedOrigins: rule.AllowedOrigins,
-		}
-	}
-	return corsRules
 }
