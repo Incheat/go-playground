@@ -275,6 +275,23 @@ build-local:
 		--load .
 	kind load docker-image --name ${KIND_NAME} ${SERVICE}:${ENV}
 
+
+# ----------------------------------------
+# Install Helm chart
+# 
+# kubectl get svc -n dev
+# kubectl port-forward -n dev svc/monorepo-dev-auth 8080:80
+# kubectl logs -n dev -l app.kubernetes.io/component=auth --tail=200
+# ----------------------------------------
+.PHONY: helm-install
+
+helm-install:
+	@echo "Installing Helm chart for all services"
+	helm upgrade --install monorepo-dev ./deploy/helm/monorepo \
+	-n dev --create-namespace \
+	-f ./deploy/helm/monorepo/values.yaml \
+	-f ./deploy/helm/monorepo/values.dev.secrets.yaml
+
 # ----------------------------------------
 # Run microservices locally
 # ----------------------------------------
