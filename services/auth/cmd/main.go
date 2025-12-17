@@ -83,7 +83,7 @@ func main() {
 		cfg.Refresh.EndPoint,
 	)
 
-	userGateway, err := usergateway.NewUserGateway(fmt.Sprintf("http://localhost:%d", cfg.UserGateway.InternalPort))
+	userGateway, err := usergateway.NewUserGateway(cfg.UserGateway.InternalAddress)
 	if err != nil {
 		log.Fatalf("Error creating user gateway: %v", err)
 	}

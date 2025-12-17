@@ -31,7 +31,7 @@ type Server struct {
 
 // UserGateway is the configuration for the user gateway.
 type UserGateway struct {
-	InternalPort Port
+	InternalAddress string
 }
 
 // Port is the port for the server.

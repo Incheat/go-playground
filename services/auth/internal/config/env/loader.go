@@ -55,10 +55,7 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
-	authUserGatewayInternalPort, err := getIntRequired("USER_INTERNAL_PORT")
-	if err != nil {
-		return nil, err
-	}
+	authUserGatewayInternalAddress := getString("USER_HTTP_ADDR")
 
 	cfg := &Config{
 		Env: EnvName(env),
@@ -66,7 +63,7 @@ func Load() (*Config, error) {
 			PublicPort: Port(authPublicPort),
 		},
 		UserGateway: UserGateway{
-			InternalPort: Port(authUserGatewayInternalPort),
+			InternalAddress: authUserGatewayInternalAddress,
 		},
 		CORS: CORS{
 			Internal: CORSRule{
