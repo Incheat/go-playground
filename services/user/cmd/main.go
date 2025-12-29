@@ -11,10 +11,12 @@ import (
 	userpb "github.com/incheat/go-playground/api/user/grpc/gen"
 	envconfig "github.com/incheat/go-playground/services/user/internal/config/env"
 	userhandler "github.com/incheat/go-playground/services/user/internal/handler/grpc"
+	"github.com/incheat/go-playground/services/user/internal/interceptor"
 	userrepo "github.com/incheat/go-playground/services/user/internal/repository/mysql"
 	userservice "github.com/incheat/go-playground/services/user/internal/service/user"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 )
 
@@ -29,7 +31,11 @@ func main() {
 	logger.Info("Starting user service", zap.String("env", string(cfg.Env)))
 	logger.Info("GRPC server internal port", zap.Int("port", int(cfg.Server.InternalPort)))
 
-	grpcServer := grpc.NewServer()
+	limiter := rate.NewLimiter(100, 100)
+	interceptors := interceptor.DefaultChain(limiter)
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(interceptors...),
+	)
 
 	// Initialize MySQL connection
 	dbDSN := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true", cfg.MySQL.User, cfg.MySQL.Password, cfg.MySQL.Host, cfg.MySQL.DBName)
