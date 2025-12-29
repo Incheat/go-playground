@@ -2,16 +2,15 @@
 
 ## Principles
 
-* Prefer lowercase, hyphen‑separated file names.
-* Use descriptive, concise names.
-* Avoid ambiguous abbreviations.
+### Packages: short, meaningful, no underscore, no hyphen (e.g., `auth`, `config`).
 
-## Go-Specific
+* ✔️ `authsvc`
+* ✔️ `authservice`
+* ❌ `AuthService`
+* ❌ `auth-service`
 
-* Packages: short, meaningful (e.g., `auth`, `config`).
-* Variables: camelCase.
-* Constants: PascalCase if exported, camelCase otherwise.
+### Files: lowercase, underscore, no hyphen.
 
-## Repo-Level
-
-* Keep naming consistent across repos.
+* ✔️ `user_service.go`
+* ❌ `AuthService.go`
+* ❌ `auth-service.go`
