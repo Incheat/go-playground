@@ -1,276 +1,295 @@
-# go-playground
-
+# go-production-backend
 [![codecov](https://codecov.io/gh/Incheat/go-playground/branch/main/graph/badge.svg)](https://codecov.io/gh/Incheat/go-playground)
 
-A repo for experimenting with Go—practicing go modules, exploring frameworks, and trying out microservice patterns and small POCs.
+A **production-oriented Go backend system** designed to demonstrate real-world engineering practices, architectural decision-making, and operational excellence.
 
-## Example Project
-
-This project is a Go-based backend service designed with clean architecture principles, modular service separation, automated API generation, and strong security practices. It includes a modern tech stack, testing utilities, containerized development, and CI/CD integration.
-
----
-
-## 🚀 Tech Stack
-
-### **Develop**
-* **Oapi-codegen** — use strict server to achieve API-First development
-
-### **Languages & Frameworks**
-
-* **Go** — primary backend language
-* **Gin** — high‑performance HTTP framework -> not fully compatible with strict-server
-* **Chi** - Chi + strict-server is more API-first
-* **GORM** — ORM for database access
-* **SQLC wih golang-migrate** - 
-
-### **Databases & Caching**
-
-* **MySQL** — primary relational database
-* **Redis (go-redis)** — caching & session management
-
-### **Authentication & Security**
-
-* **golang-jwt/jwt** — JWT authentication with refresh tokens
-* Follows **OWASP API Security Top 10** best practices
-
-### **Testing Tools**
-
-* **Testify** — unit testing framework
-* **GoMock** — mocking
-* **Godog** — BDD testing
-* **Pact** — consumer/provider contract testing
-
-### **Deployment & DevOps**
-
-* **Docker** — containerization
-* **GitHub Actions / GitLab CI** — CI/CD
-
-### **Cloud Providers**
-
-* **AWS** (ECS/EKS, RDS, ElastiCache, S3)
-  or
-* **GCP** (Cloud Run, CloudSQL, Memorystore, GCS)
+This repository is **not a toy project**.  
+It is built to reflect how modern backend systems are designed, implemented, tested, deployed, and operated in production environments.
 
 ---
 
-## 📦 Project Structure (High-Level)
+## 🎯 Project Goals
 
-For full details, see `docs/project-structure-guide.md`.
-
-Key directories:
-
-* `cmd/` — service entry points
-* `config/` — environment configs
-* `services/` — individual service modules
-* `pkg/` — shared utilities
-* `migrations/` — DB migrations
-* `scripts/` — CI/CD & tooling scripts
-* `test/` — BDD, contract tests, utilities
+- Demonstrate **end-to-end ownership**
+  - Requirement analysis → API design → implementation → CI/CD → observability
+- Apply **resilience engineering** principles
+- Design **high-QPS, production-ready endpoints**
+- Serve as a **reference backend architecture** for Go engineers
 
 ---
 
-## ⚡ Quickstart
+## 🧱 Architecture Overview
 
-### Run the API service
+### High-Level Architecture
 
+```mermaid
+graph TD
+    Client -->|HTTP| BFF
+    BFF -->|gRPC| UserService
+    BFF -->|gRPC| OrderService
+
+    UserService --> Postgres
+    OrderService --> Postgres
+    UserService --> Redis
+    OrderService --> Redis
+
+    subgraph Infra
+        Envoy
+        Prometheus
+        Jaeger
+    end
 ```
-go run cmd/api/main.go
+
+### Why Microservices (Not a Monolith)?
+
+| Consideration | Decision |
+|--------------|----------|
+| Team scalability | Independent services |
+| Deployment | Isolated rollouts |
+| Fault isolation | Failure containment |
+| Technology evolution | Per-service flexibility |
+
+> Trade-off acknowledged: Microservices add operational complexity.  
+> This repo demonstrates *how to manage that complexity correctly*.
+
+---
+
+## 🔍 Service Scope & Responsibility
+
+Each service follows **Single Responsibility Principle**:
+
+| Service | Responsibility |
+|-------|----------------|
+| BFF | API aggregation, auth, client-specific shaping |
+| User Service | User identity & profile |
+| Order Service | Order lifecycle |
+
+Boundaries are defined by:
+- Business capability
+- Data ownership
+- Independent scaling needs
+
+---
+
+## 🌐 API Design
+
+### API-First Development (OpenAPI)
+
+- OpenAPI (OAPI) is the **single source of truth**
+- Enables:
+  - Contract-first development
+  - Client/server code generation
+  - Backward compatibility guarantees
+
+
+### Why OpenAPI over Swagger UI?
+- OpenAPI is a **specification**
+- Swagger is primarily a **visualization tool**
+- API-first development requires the spec, not the UI
+
+---
+
+## 🚦 HTTP Layer
+
+### Why Chi (Not Gin / Fiber / Echo)?
+
+| Framework | Trade-off |
+|---------|-----------|
+| Chi | Idiomatic Go, net/http compatible |
+| Gin | Faster prototyping, more magic |
+| Fiber | Fast, but non-standard |
+| Echo | Balanced but opinionated |
+
+Chi was chosen because:
+- Minimal abstraction
+- Composable middleware
+- Production-friendly patterns
+
+---
+
+## 🔗 gRPC Layer
+
+### Design Considerations
+
+- Versioning via package names
+- Backward compatibility enforced with proto checks
+- Interceptors for:
+  - Auth
+  - Logging
+  - Metrics
+  - Retry / Timeout
+
+### Envoy Responsibilities
+
+- mTLS
+- Rate limiting
+- Authentication
+- Retries
+- Metrics export
+
+---
+
+## 🗄️ Data Layer
+
+### Database Choice
+
+**PostgreSQL over MySQL**
+- Better concurrency model
+- Rich indexing
+- Strong consistency guarantees
+
+### Query Strategy
+
+| Tool | Reason |
+|----|----|
+| sqlc | Type-safe, explicit SQL |
+| GORM | Avoided due to N+1 risk |
+
+---
+
+## ⚡ Cache & Session
+
+- Redis used for:
+  - Session storage
+  - Hot-path caching
+  - Idempotency keys
+
+---
+
+## 🔐 Security Model
+
+- JWT (short-lived access)
+- Opaque tokens (refresh)
+- RBAC
+- Distributed session validation
+
+---
+
+## 🧪 Testing Strategy
+
+### Test Pyramid
+
+```mermaid
+graph TD
+    Unit --> Integration --> Contract --> E2E
 ```
 
-### Health check
+### Test Types
 
+| Type | Purpose |
+|----|----|
+| Unit | Business logic correctness |
+| Integration | DB, Redis, external deps |
+| Contract | gRPC proto compatibility |
+| Golden Tests | Stable gRPC responses |
+| E2E | Full system validation |
+| Acceptance | Specification by example(godog) |
+
+gRPC already acts as a contract — Pact tests are only needed across repos or teams.
+
+---
+
+## 🧯 Resilience Mechanisms
+
+- Timeouts & retries
+- Circuit breakers
+- Backpressure
+- Graceful shutdown
+- Idempotency keys
+
+---
+
+## 📊 Observability
+
+### OpenTelemetry-Based
+
+- Logging (Zap/Zerolog)
+- Metrics (Prometheus)
+- Tracing (Jaeger)
+
+### Logging Principles
+
+- Structured logs only
+- Required fields:
+  - trace_id
+  - request_id
+  - service
+  - environment
+  - version
+  - instance_id
+
+---
+
+## 🔄 CI/CD Pipeline
+
+```mermaid
+graph LR
+    Commit --> Lint
+    Lint --> Test
+    Test --> Build
+    Build --> Docker
+    Docker --> Deploy
 ```
-curl http://localhost:8080/health
+
+### Tooling
+
+- Pre-commit hooks
+- Docker Compose (local)
+- Kubernetes + Helm
+- Proto compatibility checks
+
+---
+
+## ▶️ Running Locally
+
+### Prerequisites
+
+- Go ≥ 1.22
+- Docker & Docker Compose
+
+### Start Everything
+
+```bash
+docker-compose up --build
+```
+
+### Run Services Locally
+
+```bash
+make run
 ```
 
 ---
 
-## 🌎 Environment Switching
+## 📚 Topics Covered
 
-Use `APP_ENV` to start the application with different configurations.
-
-### Test
-
-```
-APP_ENV=test go run services/{service_name}/cmd/main.go
-```
-
-### Staging
-
-```
-APP_ENV=staging go run services/{service_name}/cmd/main.go
-```
-
-### Production
-
-```
-APP_ENV=prod go run services/{service_name}/cmd/main.go
-```
+- Readiness / Liveness / Startup probes
+- Scale up vs scale out
+- Event-driven architecture
+- CAP trade-offs
+- pprof & concurrency debugging
+- Incident response & postmortems
+- Design docs & runbooks
 
 ---
 
-## 🧪 BDD Testing (Godog)
+## 🧠 Philosophy
 
-Ensure your `GOPATH/bin` is in your PATH:
-
-```
-export PATH=$PATH:$(go env GOPATH)/bin
-```
-
-Check installation:
-
-```
-godog --version
-```
-
-Run all tests:
-
-```
-godog
-```
-
-Run a specific feature:
-
-```
-godog test/features/dummy.feature
-```
-
-With formatting:
-
-```
-godog --format=pretty
-```
-
-With tags:
-
-```
-godog --tags=@api
-```
+This project emphasizes:
+- Explicit design decisions
+- Failure-mode thinking
+- Production-first engineering
+- Clear trade-offs, not dogma
 
 ---
 
-## 📘 Swagger / OpenAPI Documentation
+## 📌 Status
 
-Swagger is automatically generated using `swag`.
-
-### Install tools
-
-```
-go install github.com/swaggo/swag/cmd/swag@latest
-```
-
-Ensure PATH:
-
-```
-export PATH="$PATH:$(go env GOPATH)/bin"
-```
-
-### Initialize Swagger docs
-
-```
-swag init -g cmd/api/main.go
-```
-
-This generates:
-
-```
-docs/
-  docs.go
-  swagger.json
-  swagger.yaml
-```
-
-### Access Swagger UI
-
-Run the server and open:
-
-```
-http://localhost:8080/swagger/index.html
-```
+🚧 Actively evolving  
+📖 Designed as a learning & interview reference
 
 ---
 
-## 🔧 OpenAPI Code Generation (oapi-codegen)
+## 📜 License
 
-Install:
-
-```
-go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
-```
-
-Check version:
-
-```
-oapi-codegen -version
-```
-
-Generate code:
-
-```
-oapi-codegen --config=service/ping/oapi-codegen.server.yaml service/ping/openapi.yaml
-```
-
-Makefile helpers:
-
-```
-make gen        # generate all services
-make ping/gen   # generate ping service only
-```
-
----
-
-## 🔒 Security Module Overview
-
-For details see: `docs/security-module.md`
-
-Key components under `internal/security/`:
-
-* `jwt.go` — token generation/parsing
-* `password.go` — bcrypt hashing
-* `auth_middleware.go` — authorization middleware
-* `token.go` — refresh token flow
-* `input_sanitizer.go` — sanitize inputs
-* `rate_limiter.go` — rate limiting
-* `signature.go` — signed URL & integrity validation
-
----
-
-## 📝 Logging Module Overview
-
-See `docs/logger-module.md`.
-
-Located in `pkg/logger/`:
-
-* `logger.go` — unified logger wrapper
-* `middleware.go` — Gin request logging
-* `error_logger.go` — error tracking & output sinks
-
----
-
-## 📚 Additional Documentation
-
-All extended documentation is located under `docs/`.
-
-Recommended docs:
-
-* `project-structure-guide.md`
-* `repo-naming-guide.md`
-* `license-choice-guide.md`
-* `api/swagger-setup.md`
-* `api/oapi-codegen-guide.md`
-* `security/owasp-api-security.md`
-* `testing/bdd-godog-guide.md`
-
----
-
-## 📄 License
-
-Choose the appropriate license for your project. See:
-`docs/license-choice-guide.md`
-
----
-
-## 🤝 Contributions
-
-Contributions are welcome! Please open an issue or submit a pull request.
-
+MIT
