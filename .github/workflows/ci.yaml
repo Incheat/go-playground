@@ -115,7 +115,7 @@ jobs:
       - name: Run gosec (SARIF)
         run: |
           set -euo pipefail
-          gosec -fmt=sarif -out=gosec.sarif ./...
+          gosec -no-fail -fmt=sarif -out=gosec.sarif ./...
 
       - name: Upload gosec SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
