@@ -3,6 +3,7 @@ package authservice
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,7 +22,6 @@ type Service struct {
 // AccessTokenMaker is the interface for the access token maker.
 type AccessTokenMaker interface {
 	CreateToken(ID string) (model.AccessToken, error)
-	ParseToken(token string) (string, error)
 }
 
 // RefreshTokenMaker is the interface for the refresh token maker.
@@ -49,8 +49,10 @@ func New(accessToken AccessTokenMaker, refreshToken RefreshTokenMaker, refreshTo
 // LoginWithEmailAndPassword logs in a user with email and password.
 func (s *Service) LoginWithEmailAndPassword(ctx context.Context, email string, password string, userAgent, ipAddress string) (*LoginResult, error) {
 
+	fmt.Println("Starting to verify user credential")
 	user, err := s.userGateway.VerifyCredentials(ctx, email, password)
 	if err != nil {
+		fmt.Println("Error verifying user credential", err)
 		return nil, err
 	}
 
