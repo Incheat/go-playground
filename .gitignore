@@ -44,3 +44,7 @@ services/*/internal/db/*/gen/
 
 # PKI
 infra/security/mtls/pki/secrets/*
+infra/security/mtls/pki/stepca/db
+infra/security/mtls/pki/*/run/*
+infra/security/mtls/pki/*/sds/*
+infra/security/mtls/pki/*/*.crt

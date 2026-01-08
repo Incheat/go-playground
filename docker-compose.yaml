@@ -1,44 +1,114 @@
 services:
-  # redis:
-  #   image: redis:7-alpine
-  #   command: ["redis-server", "--requirepass", "${AUTH_REDIS_PASSWORD}", "--appendonly", "yes"]
-  #   ports:
-  #     - "6379:6379"
+  # =========================
+  # STEP-CA (shared)
+  # =========================
+  step-ca:
+    image: smallstep/step-ca:latest
+    volumes:
+      - ./infra/security/mtls/pki/stepca:/home/step
+      - ./infra/security/mtls/pki/secrets:/run/secrets:ro
+    ports:
+      - "9000:9000"
+    command: ["step-ca", "/home/step/config/ca.json", "--password-file", "/run/secrets/ca.password"]
+    healthcheck:
+      test: ["CMD", "wget", "--ca-certificate=/home/step/certs/root_ca.crt", "-qO-", "https://localhost:9000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
-  # mysql:
-  #   image: mysql:8.0
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-  #     MYSQL_DATABASE: ${MYSQL_DATABASE}
-  #     MYSQL_USER: ${MYSQL_USER}
-  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-  #   ports:
-  #     - "3306:3306"
-  #   volumes:
-  #     - mysql_data:/var/lib/mysql
-
-  user:
-    image: user:dev
-    env_file:
-      - .env.local
-    # Localhost:Container
-    # ports:
-    #   - "8082:8080"
-    #   - "19090:9090"
-    # depends_on:
-    #   - mysql
-
+  # =========================
+  # AUTH: app + envoy + step-sds
+  # =========================
   auth:
     image: auth:dev
     env_file:
       - .env.local
-    # Localhost:Container
-    ports:
-      - "8081:8080"
-      # - "29090:9090"
+    network_mode: "service:auth-envoy"
     depends_on:
-      # - redis
-      - user
+      - auth-envoy
+      - user-envoy
+    # The app listens ONLY on:
+    #   127.0.0.1:8080 (HTTP)
+    #   127.0.0.1:9090 (gRPC)
+    # No ports exposed
 
-# volumes:
-#   mysql_data:
+  auth-sds:
+    image: smallstep/step-sds:latest
+    volumes:
+      - ./infra/security/mtls/pki/auth-sds:/home/step
+      - ./infra/security/mtls/pki/secrets:/run/secrets:ro
+      - ./infra/security/mtls/pki/auth-sds/run:/var/run/step-sds
+    depends_on: [ step-ca ]
+    command:
+      - /bin/sh
+      - -c
+      - >
+        set -eux;
+        rm -f /var/run/step-sds/sds.sock;
+        ls -la /var/run/step-sds;
+        exec step-sds run /home/step/config/sds.json
+        --password-file /run/secrets/auth.sds.password
+        --provisioner-password-file /run/secrets/ca.password
+
+  auth-envoy:
+    image: envoyproxy/envoy:v1.31-latest
+    command: ["-c", "/etc/envoy/envoy.yaml", "--log-level", "info"]
+    volumes:
+      - ./infra/envoy/auth-envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./infra/security/mtls/pki/auth-sds/run:/var/run/step-sds:ro
+      - ./infra/security/tls/localhost:/etc/envoy/certs:ro
+    depends_on: [ auth-sds ]
+    ports:
+      # HTTP: auth-envoy:18080 -> auth:8080
+      - "8081:18080"
+      # gRPC: auth-envoy:19080 -> auth:9090
+      # Envoy admin
+      - "19001:19000"   # http://localhost:19001/stats/prometheus
+
+  # =========================
+  # USER: app + envoy + step-sds
+  # =========================
+  user:
+    image: user:dev
+    env_file:
+      - .env.local
+    network_mode: "service:user-envoy"
+    depends_on:
+      - user-envoy
+    # The app listens ONLY on:
+    #   127.0.0.1:8080 (HTTP)
+    #   127.0.0.1:9090 (gRPC)
+    # No ports exposed
+
+  user-sds:
+    image: smallstep/step-sds:latest
+    volumes:
+      - ./infra/security/mtls/pki/user-sds:/home/step
+      - ./infra/security/mtls/pki/secrets:/run/secrets:ro
+      - ./infra/security/mtls/pki/user-sds/run:/var/run/step-sds
+    depends_on: [ step-ca ]
+    command:
+      - /bin/sh
+      - -c
+      - >
+        set -eux;
+        rm -f /var/run/step-sds/sds.sock;
+        ls -la /var/run/step-sds;
+        exec step-sds run /home/step/config/sds.json
+        --password-file /run/secrets/user.sds.password
+        --provisioner-password-file /run/secrets/ca.password
+
+  user-envoy:
+    image: envoyproxy/envoy:v1.31-latest
+    command: ["-c", "/etc/envoy/envoy.yaml", "--log-level", "info"]
+    volumes:
+      - ./infra/envoy/user-envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./infra/security/mtls/pki/user-sds/run:/var/run/step-sds:ro
+    ports:
+      # HTTP: user-envoy:18080 -> user:8080
+      # gRPC: user-envoy:19080 -> user:9090
+      # Envoy admin (metrics, config dump)
+      - "19002:19000"   # http://localhost:19002/stats/prometheus
+    depends_on:
+      - user-sds
+      - auth-envoy
