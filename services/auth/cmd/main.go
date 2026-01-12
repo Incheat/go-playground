@@ -59,30 +59,20 @@ func main() {
 		}
 	}()
 
-	// HTTP router
-	router := chi.NewRouter()
-	router.Use(nethttpmiddleware.OapiRequestValidatorWithOptions(
-		openAPISpec,
-		chimiddleware.NewValidatorOptions(chimiddleware.ValidatorConfig{
-			ProdMode: cfg.Env == envconfig.EnvProd,
-		}),
-	))
-	router.Use(chimiddleware.PathBasedCORS(convertCORSRules(&cfg.CORS.Internal)))
-	router.Use(chimiddleware.RequestID())
-	router.Use(chimiddleware.HTTPRequest())
-	router.Use(chimiddleware.ZapLogger(logger))
-	router.Use(chimiddleware.ZapRecovery(logger))
-
 	// Auth components
 	refreshTokenRepository := redisrepo.NewRefreshTokenRepository(redisClient)
 
-	jwtTokenMaker := token.NewJWTMaker(cfg.JWT.Secret, cfg.JWT.Expire)
+	jwtTokenMaker, err := token.New(cfg.JWT.PrivateKeyPEM, cfg.JWT.KeyID, cfg.JWT.Issuer, cfg.JWT.Audience, cfg.JWT.Expire)
+	if err != nil {
+		log.Fatalf("Error creating JWT token maker: %v", err)
+	}
 	opaqueTokenMaker := token.NewOpaqueMaker(
 		cfg.Refresh.NumBytes,
 		cfg.Refresh.MaxAge,
 		cfg.Refresh.EndPoint,
 	)
 
+	logger.Info("Creating user gateway", zap.String("address", cfg.UserGateway.InternalAddress))
 	userGateway, err := usergateway.New(cfg.UserGateway.InternalAddress)
 	if err != nil {
 		log.Fatalf("Error creating user gateway: %v", err)
@@ -91,12 +81,39 @@ func main() {
 	authImpl := authhandler.New(authService)
 
 	strict := servergen.NewStrictHandler(authImpl, nil)
-	apiHandler := servergen.HandlerFromMux(strict, router)
+
+	// ---- HTTP Routers ----
+	rootRouter := chi.NewRouter()
+
+	// ✅ JWKS endpoint (NOT behind OpenAPI validator)
+	jwksPath := cfg.JWT.JWKSPath
+	if jwksPath == "" {
+		jwksPath = "/.well-known/jwks.json"
+	}
+	rootRouter.Get(jwksPath, jwtTokenMaker.JWKSHandler)
+
+	// HTTP API router
+	apiRouter := chi.NewRouter()
+	apiRouter.Use(nethttpmiddleware.OapiRequestValidatorWithOptions(
+		openAPISpec,
+		chimiddleware.NewValidatorOptions(chimiddleware.ValidatorConfig{
+			ProdMode: cfg.Env == envconfig.EnvProd,
+		}),
+	))
+	// apiRouter.Use(chimiddleware.PathBasedCORS(convertCORSRules(&cfg.CORS.Internal)))
+	// apiRouter.Use(chimiddleware.RequestID())
+	apiRouter.Use(chimiddleware.HTTPRequest())
+	apiRouter.Use(chimiddleware.ZapLogger(logger))
+	apiRouter.Use(chimiddleware.ZapRecovery(logger))
+
+	apiHandler := servergen.HandlerFromMux(strict, apiRouter)
+
+	rootRouter.Mount("/", apiHandler)
 
 	var g errgroup.Group
 
 	g.Go(func() error {
-		return http.ListenAndServe(fmt.Sprintf(":%d", int(cfg.Server.PublicPort)), apiHandler)
+		return http.ListenAndServe(fmt.Sprintf(":%d", int(cfg.Server.PublicPort)), rootRouter)
 	})
 
 	if err := g.Wait(); err != nil {
@@ -114,12 +131,12 @@ func initLogger(env envconfig.EnvName) *zap.Logger {
 	}
 }
 
-func convertCORSRules(corsRule *envconfig.CORSRule) []chimiddleware.CORSRule {
-	path := "*"
-	return []chimiddleware.CORSRule{
-		{
-			Path:           path,
-			AllowedOrigins: corsRule.AllowedOrigins,
-		},
-	}
-}
+// func convertCORSRules(corsRule *envconfig.CORSRule) []chimiddleware.CORSRule {
+// 	path := "*"
+// 	return []chimiddleware.CORSRule{
+// 		{
+// 			Path:           path,
+// 			AllowedOrigins: corsRule.AllowedOrigins,
+// 		},
+// 	}
+// }

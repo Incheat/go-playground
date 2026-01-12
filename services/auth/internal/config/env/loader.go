@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // errMissingEnv is the error returned when a required environment variable is missing.
@@ -39,11 +40,16 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
-	authJWTSecret := getString("AUTH_JWT_SECRET")
-	authJWTExpire, err := getIntRequired("AUTH_JWT_EXPIRE")
+	authJWTPrivateKeyPEM := getString("AUTH_JWT_PRIVATE_KEY_PEM")
+	authJWTKeyID := getString("AUTH_JWT_KEY_ID")
+	authJWTIssuer := getString("AUTH_JWT_ISSUER")
+	authJWTAudience := getString("AUTH_JWT_AUDIENCE")
+	authJWKSPath := getString("AUTH_JWT_JWKS_PATH")
+	authJWTExpireRaw, err := getIntRequired("AUTH_JWT_EXPIRE")
 	if err != nil {
 		return nil, err
 	}
+	authJWTExpire := time.Duration(authJWTExpireRaw) * time.Minute
 
 	authRefreshNumBytes, err := getIntRequired("AUTH_REFRESH_NUM_BYTES")
 	if err != nil {
@@ -55,7 +61,7 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
-	authUserGatewayInternalAddress := getString("USER_HTTP_ADDR")
+	authUserGatewayInternalAddress := getString("USER_GRPC_ADDR")
 
 	cfg := &Config{
 		Env: EnvName(env),
@@ -81,8 +87,12 @@ func Load() (*Config, error) {
 			DB:       authRedisDB,
 		},
 		JWT: JWT{
-			Secret: authJWTSecret,
-			Expire: authJWTExpire,
+			PrivateKeyPEM: authJWTPrivateKeyPEM,
+			KeyID:         authJWTKeyID,
+			Issuer:        authJWTIssuer,
+			Audience:      authJWTAudience,
+			Expire:        authJWTExpire,
+			JWKSPath:      authJWKSPath,
 		},
 		Refresh: Refresh{
 			NumBytes: authRefreshNumBytes,
@@ -157,8 +167,17 @@ func validate(cfg *Config) error {
 		return fmt.Errorf("AUTH_HTTP_PORT: must be between 1 and 65535")
 	}
 
-	if cfg.JWT.Secret == "" {
-		return fmt.Errorf("AUTH_JWT_SECRET: %w", errMissingEnv)
+	if cfg.JWT.PrivateKeyPEM == "" {
+		return fmt.Errorf("AUTH_JWT_PRIVATE_KEY_PEM is empty")
+	}
+	if cfg.JWT.KeyID == "" {
+		return fmt.Errorf("AUTH_JWT_KEY_ID is empty")
+	}
+	if cfg.JWT.Issuer == "" {
+		return fmt.Errorf("AUTH_JWT_ISSUER is empty")
+	}
+	if cfg.JWT.Audience == "" {
+		return fmt.Errorf("AUTH_JWT_AUDIENCE is empty")
 	}
 	return nil
 }

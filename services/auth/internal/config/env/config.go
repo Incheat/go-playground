@@ -1,6 +1,8 @@
 // Package envconfig defines the configuration for the auth service.
 package envconfig
 
+import "time"
+
 // EnvName is the name of the environment.
 type EnvName string
 
@@ -58,8 +60,12 @@ type Redis struct {
 
 // JWT is the configuration for the JWT.
 type JWT struct {
-	Secret string
-	Expire int
+	PrivateKeyPEM string
+	KeyID         string
+	Issuer        string
+	Audience      string
+	Expire        time.Duration
+	JWKSPath      string
 }
 
 // Refresh is the configuration for the refresh.
