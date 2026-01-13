@@ -1,5 +1,52 @@
 services:
   # =========================
+  # STARTUP PROBE
+  # =========================
+  startup-probe:
+    image: probe:dev
+    command: ["sh", "-c", "sleep infinity"]
+    depends_on:
+      step-ca:
+        condition: service_healthy
+      auth-envoy:
+        condition: service_started
+      user-envoy:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://auth-envoy:19000/ready | grep -q LIVE \
+          && curl -fsS http://user-envoy:19000/ready | grep -q LIVE"
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+
+
+  # =========================
+  # E2E PROBE
+  # =========================
+  e2e-probe:
+    image: probe:dev
+    command: ["sh", "-c", "sleep infinity"]
+    depends_on:
+      startup-probe:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://auth-envoy:18081/healthz >/dev/null \
+          && grpc_health_probe -addr=user-envoy:19081 >/dev/null"
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+
+  # =========================
   # STEP-CA (shared)
   # =========================
   step-ca:
@@ -26,9 +73,7 @@ services:
       - .env.local
     network_mode: "service:auth-envoy"
     depends_on:
-      auth-envoy:
-        condition: service_healthy
-      user-envoy:
+      startup-probe:
         condition: service_healthy
     # The app listens ONLY on:
     #   127.0.0.1:8080 (HTTP)
@@ -94,7 +139,7 @@ services:
       - .env.local
     network_mode: "service:user-envoy"
     depends_on:
-      user-envoy:
+      startup-probe:
         condition: service_healthy
     # The app listens ONLY on:
     #   127.0.0.1:8080 (HTTP)
