@@ -19,11 +19,28 @@ static_resources:
             name: envoy.transport_sockets.tls
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
-              require_client_certificate: false
+              require_client_certificate: true
               common_tls_context:
-                tls_certificates:
-                  - certificate_chain: { filename: /etc/envoy/certs/localhost.crt } # fullchain.crt
-                    private_key:        { filename: /etc/envoy/certs/localhost.key }
+                tls_certificate_sds_secret_configs:
+                  - name: auth-envoy
+                    sds_config:
+                      resource_api_version: V3
+                      api_config_source:
+                        api_type: GRPC
+                        transport_api_version: V3
+                        grpc_services:
+                          - envoy_grpc:
+                              cluster_name: auth_sds_uds
+                validation_context_sds_secret_config:
+                  name: trusted_ca
+                  sds_config:
+                    resource_api_version: V3
+                    api_config_source:
+                      api_type: GRPC
+                      transport_api_version: V3
+                      grpc_services:
+                        - envoy_grpc:
+                            cluster_name: auth_sds_uds
                 alpn_protocols: ["h2", "http/1.1"]
           filters:
             - name: envoy.filters.network.http_connection_manager
@@ -72,16 +89,6 @@ static_resources:
                           route:
                             cluster: auth_app_http
                             timeout: 5s
-                          typed_per_filter_config:
-                            envoy.filters.http.cors:
-                              "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
-                              allow_origin_string_match:
-                                - exact: "http://localhost:3000"
-                              allow_methods: "POST,OPTIONS"
-                              allow_headers: "content-type,authorization"
-                              expose_headers: "x-request-id"
-                              allow_credentials: true
-                              max_age: "86400"
 
                         - match: { prefix: "/" }
                           route:
@@ -312,7 +319,7 @@ static_resources:
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
     # =========================
-    # (C) OUTBOUND (to user app :15001)
+    # (D) OUTBOUND (to user app :15001)
     # =========================
     - name: auth_outbound_to_user_grpc
       address:
